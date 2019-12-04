@@ -89,7 +89,9 @@ void loadKeysFromFile(const std::string& file_name, uint64_t num_records,
 void selectKeysToInsert(const unsigned percent, 
 			std::vector<std::string> &insert_keys, 
 			std::vector<std::string> &keys) {
-    random_shuffle(keys.begin(), keys.end());
+    std::random_device rd;
+    std::mt19937 g(rd());
+    shuffle(keys.begin(), keys.end(), g);
     uint64_t num_insert_keys = keys.size() * percent / 100;
     for (uint64_t i = 0; i < num_insert_keys; i++)
 	insert_keys.push_back(keys[i]);
@@ -102,7 +104,9 @@ void selectKeysToInsert(const unsigned percent,
 void selectIntKeysToInsert(const unsigned percent, 
 			   std::vector<uint64_t> &insert_keys, 
 			   std::vector<uint64_t> &keys) {
-    random_shuffle(keys.begin(), keys.end());
+    std::random_device rd;
+    std::mt19937 g(rd());
+    shuffle(keys.begin(), keys.end(), g);
     uint64_t num_insert_keys = keys.size() * percent / 100;
     for (uint64_t i = 0; i < num_insert_keys; i++)
 	insert_keys.push_back(keys[i]);
