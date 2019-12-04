@@ -3,6 +3,10 @@ project (SuRF)
 
 message(STATUS "Configuring..." ${CMAKE_PROJECT_NAME})
 
+if (APPLE)
+  link_directories(/usr/local/lib/)
+endif (APPLE)
+
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
