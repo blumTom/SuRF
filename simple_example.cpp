@@ -16,7 +16,33 @@ int main() {
 	"trie",
     };
 
+    std::cout << "Build Index with Keys: { 40, 43, 11048, 2621483 }" << "\n";
+    std::vector<uint32_t> intKeys = { 40, 43, 11048, 2621483 };
+
     // basic surf
+    SuRF* surfIntegerIndex = new SuRF(intKeys);
+    uint32_t integerKey = 40;
+    std::cout << "IntegerLookup: " << (surfIntegerIndex->lookupKey(integerKey) ? "Found key " : "Not found key ") << integerKey << "!\n";
+    integerKey = 43;
+    std::cout << "IntegerLookup: " << (surfIntegerIndex->lookupKey(integerKey) ? "Found key " : "Not found key ") << integerKey << "!\n";
+    integerKey = 11048;
+    std::cout << "IntegerLookup: " << (surfIntegerIndex->lookupKey(integerKey) ? "Found key " : "Not found key ") << integerKey << "!\n";
+    integerKey = 2621483;
+    std::cout << "IntegerLookup: " << (surfIntegerIndex->lookupKey(integerKey) ? "Found key " : "Not found key ") << integerKey << "!\n";
+    integerKey = 41;
+    std::cout << "IntegerLookup: " << (surfIntegerIndex->lookupKey(integerKey) ? "Found key " : "Not found key ") << integerKey << "!\n";
+
+    uint32_t leftIntegerKey = 39;
+    uint32_t rightIntegerKey = 78;
+    bool left_included = true;
+    bool right_included = true;
+    std::cout << "IntegerLookupRange: " << (surfIntegerIndex->lookupRange(leftIntegerKey, true, rightIntegerKey, true) ? "Found key " : "Not found key in range ") << (left_included ? "(" : ")") << leftIntegerKey << "," << rightIntegerKey << (right_included ? ")" : "(") << "!\n";
+    leftIntegerKey = 13;
+    rightIntegerKey = 38;
+    left_included = false;
+    right_included = true;
+    std::cout << "IntegerLookupRange: " << (surfIntegerIndex->lookupRange(leftIntegerKey, true, rightIntegerKey, true) ? "Found key " : "Not found key in range ") << (left_included ? "(" : ")") << leftIntegerKey << "," << rightIntegerKey << (right_included ? ")" : "(") << "!\n";
+
     SuRF* surf = new SuRF(keys);
 
     // use default dense-to-sparse ratio; specify suffix type and length
