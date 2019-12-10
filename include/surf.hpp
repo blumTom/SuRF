@@ -63,11 +63,8 @@ public:
     SuRF(const std::vector<uint32_t>& keys) {
         std::vector<std::string> keyStrs;
 
-        char* buffer = reinterpret_cast<char*>(malloc(5));
-        *(buffer + 4) = 0;
         for (uint32_t key : keys) {
-            memcpy(buffer,reinterpret_cast<char*>(&key),4);
-            keyStrs.emplace_back(buffer);
+            keyStrs.emplace_back(uint32ToString(key));
         }
 
         create(keyStrs, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
@@ -76,11 +73,8 @@ public:
     SuRF(const std::vector<uint64_t>& keys) {
         std::vector<std::string> keyStrs;
 
-        char* buffer = reinterpret_cast<char*>(malloc(9));
-        *(buffer + 8) = 0;
         for (uint64_t key : keys) {
-            memcpy(buffer,reinterpret_cast<char*>(&key),8);
-            keyStrs.emplace_back(buffer);
+            keyStrs.emplace_back(uint64ToString(key));
         }
 
         create(keyStrs, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
@@ -99,14 +93,9 @@ public:
          const level_t real_suffix_len) {
         std::vector<std::string> keyStrs;
 
-        char* buffer = reinterpret_cast<char*>(malloc(5));
-        *(buffer + 4) = 0;
         for (uint32_t key : keys) {
-            memcpy(buffer,reinterpret_cast<char*>(&key),4);
-            keyStrs.emplace_back(buffer);
+            keyStrs.emplace_back(uint32ToString(key));
         }
-
-        delete(buffer);
 
         create(keyStrs, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
     }
@@ -117,14 +106,9 @@ public:
          const level_t real_suffix_len) {
         std::vector<std::string> keyStrs;
 
-        char* buffer = reinterpret_cast<char*>(malloc(9));
-        *(buffer + 8) = 0;
         for (uint64_t key : keys) {
-            memcpy(buffer,reinterpret_cast<char*>(&key),8);
-            keyStrs.emplace_back(buffer);
+            keyStrs.emplace_back(uint64ToString(key));
         }
-
-        delete(buffer);
 
         create(keyStrs, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
     }
@@ -146,11 +130,8 @@ public:
          const level_t real_suffix_len) {
         std::vector<std::string> keyStrs;
 
-        char* buffer = reinterpret_cast<char*>(malloc(5));
-        *(buffer + 4) = 0;
         for (uint32_t key : keys) {
-            memcpy(buffer,reinterpret_cast<char*>(&key),4);
-            keyStrs.emplace_back(buffer);
+            keyStrs.emplace_back(uint32ToString(key));
         }
 
         create(keyStrs, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -164,11 +145,8 @@ public:
          const level_t real_suffix_len) {
         std::vector<std::string> keyStrs;
 
-        char* buffer = reinterpret_cast<char*>(malloc(9));
-        *(buffer + 8) = 0;
         for (uint64_t key : keys) {
-            memcpy(buffer,reinterpret_cast<char*>(&key),8);
-            keyStrs.emplace_back(buffer);
+            keyStrs.emplace_back(uint64ToString(key));
         }
 
         create(keyStrs, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -267,27 +245,11 @@ bool SuRF::lookupKey(const std::string& key) const {
 }
 
 bool SuRF::lookupKey(uint32_t& key) const {
-    char* keyStr = reinterpret_cast<char*>(malloc(5));
-    *(keyStr + 4) = 0;
-    memcpy(keyStr,reinterpret_cast<char*>(&key),4);
-
-    bool result = lookupKey(keyStr);
-
-    delete(keyStr);
-
-    return result;
+    return lookupKey(uint32ToString(key));
 }
 
 bool SuRF::lookupKey(uint64_t& key) const {
-    char* keyStr = reinterpret_cast<char*>(malloc(9));
-    *(keyStr + 8) = 0;
-    memcpy(keyStr,reinterpret_cast<char*>(&key),8);
-
-    bool result = lookupKey(keyStr);
-
-    delete(keyStr);
-
-    return result;
+    return lookupKey(uint64ToString(key));
 }
 
 SuRF::Iter SuRF::moveToKeyGreaterThan(const std::string& key, const bool inclusive) const {
@@ -396,40 +358,14 @@ bool SuRF::lookupRange(uint32_t& left_key,
                         const bool left_inclusive,
                         uint32_t& right_key,
                         const bool right_inclusive) {
-    char* left_keyStr = reinterpret_cast<char*>(malloc(5));
-    *(left_keyStr + 4) = 0;
-    memcpy(left_keyStr,reinterpret_cast<char*>(&left_key),4);
-
-    char* right_keyStr = reinterpret_cast<char*>(malloc(5));
-    *(right_keyStr + 4) = 0;
-    memcpy(right_keyStr,reinterpret_cast<char*>(&right_key),4);
-
-    bool result = lookupRange(left_keyStr,left_inclusive,right_keyStr,right_inclusive);
-
-    delete(left_keyStr);
-    delete(right_keyStr);
-
-    return result;
+    return lookupRange(uint32ToString(left_key),left_inclusive,uint32ToString(right_key),right_inclusive);
 }
 
 bool SuRF::lookupRange(uint64_t& left_key,
                         const bool left_inclusive,
                        uint64_t& right_key,
                         const bool right_inclusive) {
-    char* left_keyStr = reinterpret_cast<char*>(malloc(9));
-    *(left_keyStr + 8) = 0;
-    memcpy(left_keyStr,reinterpret_cast<char*>(&left_key),8);
-
-    char* right_keyStr = reinterpret_cast<char*>(malloc(9));
-    *(right_keyStr + 8) = 0;
-    memcpy(right_keyStr,reinterpret_cast<char*>(&right_key),8);
-
-    bool result = lookupRange(left_keyStr,left_inclusive,right_keyStr,right_inclusive);
-
-    delete(left_keyStr);
-    delete(right_keyStr);
-
-    return result;
+    return lookupRange(uint64ToString(left_key),left_inclusive,uint64ToString(right_key),right_inclusive);
 }
 
 uint64_t SuRF::serializedSize() const {
