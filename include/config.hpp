@@ -56,6 +56,17 @@ uint64_t stringToUint64(const std::string& str_word) {
     return __builtin_bswap64(int_word);
 }
 
+    std::string uint32ToString(const uint32_t word) {
+        uint32_t endian_swapped_word = __builtin_bswap32(word);
+        return std::string(reinterpret_cast<const char*>(&endian_swapped_word), 4);
+    }
+
+    uint32_t stringToUint32(const std::string& str_word) {
+        uint32_t int_word = 0;
+        memcpy(reinterpret_cast<char*>(&int_word), str_word.data(), 4);
+        return __builtin_bswap32(int_word);
+    }
+
 } // namespace surf
 
 #endif // CONFIG_H_
