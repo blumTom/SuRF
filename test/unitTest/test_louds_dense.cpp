@@ -147,7 +147,15 @@ namespace surf {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
                     louds_dense_ = new LoudsDense(builder_);
                     testLookupWord();
                     delete builder_;
@@ -161,7 +169,15 @@ namespace surf {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
                     louds_dense_ = new LoudsDense(builder_);
                     testSerialize();
                     testLookupWord();
@@ -172,7 +188,15 @@ namespace surf {
 
         TEST_F (DenseUnitTest, lookupIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_dense_ = new LoudsDense(builder_);
             position_t out_node_num = 0;
 
@@ -195,7 +219,15 @@ namespace surf {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
                     louds_dense_ = new LoudsDense(builder_);
 
                     bool inclusive = true;
@@ -240,7 +272,15 @@ namespace surf {
 
         TEST_F (DenseUnitTest, moveToKeyGreaterThanIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_dense_ = new LoudsDense(builder_);
 
             bool inclusive = true;
@@ -287,7 +327,15 @@ namespace surf {
 
         TEST_F (DenseUnitTest, IteratorIncrementWordTest) {
             newBuilder(kReal, 8);
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -310,7 +358,15 @@ namespace surf {
 
         TEST_F (DenseUnitTest, IteratorIncrementIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -333,7 +389,15 @@ namespace surf {
 
         TEST_F (DenseUnitTest, IteratorDecrementWordTest) {
             newBuilder(kReal, 8);
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -356,7 +420,15 @@ namespace surf {
 
         TEST_F (DenseUnitTest, IteratorDecrementIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);

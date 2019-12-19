@@ -148,7 +148,15 @@ namespace surf {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
                     louds_sparse_ = new LoudsSparse(builder_);
 
                     testLookupWord();
@@ -163,7 +171,15 @@ namespace surf {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
                     louds_sparse_ = new LoudsSparse(builder_);
 
                     testSerialize();
@@ -175,7 +191,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, lookupIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
             position_t in_node_num = 0;
 
@@ -195,7 +219,15 @@ namespace surf {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
                     louds_sparse_ = new LoudsSparse(builder_);
 
                     bool inclusive = true;
@@ -240,7 +272,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, moveToKeyGreaterThanIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
 
             bool inclusive = true;
@@ -286,7 +326,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, IteratorIncrementWordTest) {
             newBuilder(kReal, 8);
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
             LoudsSparse::Iter iter(louds_sparse_);
@@ -308,7 +356,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, IteratorIncrementIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
             LoudsSparse::Iter iter(louds_sparse_);
@@ -330,7 +386,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, IteratorDecrementWordTest) {
             newBuilder(kReal, 8);
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
             LoudsSparse::Iter iter(louds_sparse_);
@@ -352,7 +416,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, IteratorDecrementIntTest) {
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : ints_) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
             LoudsSparse::Iter iter(louds_sparse_);
@@ -375,7 +447,15 @@ namespace surf {
 
         TEST_F (SparseUnitTest, FirstAndLastLabelInRootTest) {
             newBuilder(kReal, 8);
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             louds_sparse_ = new LoudsSparse(builder_);
             LoudsSparse::Iter iter(louds_sparse_);
             iter.setToFirstLabelInRoot();

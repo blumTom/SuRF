@@ -39,8 +39,15 @@ namespace surf {
         bool include_dense = false;
         uint32_t sparse_dense_ratio = 0;
         builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kNone);
-        builder_->
-        build(words);
+        std::vector< std::vector<label_t>> keys;
+        for (const std::string &keyStr : words) {
+        std::vector<label_t> key;
+        for (int i=0; i<keyStr.length(); i++) {
+        key.emplace_back(keyStr[i]);
+    }
+    keys.emplace_back(key);
+}
+builder_->build(keys);
         suffixes_ = new SuffixVector(kNone, builder_->getSuffixes());
     }
 

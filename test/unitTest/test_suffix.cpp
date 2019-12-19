@@ -96,7 +96,7 @@ namespace surf {
                 for (unsigned k = 0; k < words_by_suffix_start_level_[level].size(); k++) {
                     if (level == 1 && k == 32) {
                         bool is_equal = suffixes_->checkEquality(suffix_idx,
-                                                                 words_by_suffix_start_level_[level][k],
+                                                                 stringToByteVector(words_by_suffix_start_level_[level][k]),
                                                                  (level + 1));
                         ASSERT_TRUE(is_equal);
                     }
@@ -111,7 +111,12 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 for (unsigned j = 0; j < words.size(); j++) {
-                    word_t suffix = BitvectorSuffix::constructSuffix(kReal, words[j], 0, level, suffix_len);
+                    std::vector<label_t> key;
+                    for (int i=0; i<words[j].length(); i++) {
+                        key.emplace_back(words[j][i]);
+                    }
+
+                    word_t suffix = BitvectorSuffix::constructSuffix(kReal, key, 0, level, suffix_len);
                     if (words[j].length() < level || ((words[j].length() - level) * 8) < suffix_len) {
                         ASSERT_EQ(0, suffix);
                         continue;
@@ -141,10 +146,15 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 for (unsigned j = 0; j < words.size(); j++) {
-                    word_t suffix = BitvectorSuffix::constructSuffix(kMixed, words[j], suffix_len,
+                    std::vector<label_t> key;
+                    for (int i=0; i<words[j].length(); i++) {
+                        key.emplace_back(words[j][i]);
+                    }
+
+                    word_t suffix = BitvectorSuffix::constructSuffix(kMixed, key, suffix_len,
                                                                      level, suffix_len);
                     word_t hash_suffix = BitvectorSuffix::extractHashSuffix(suffix, suffix_len);
-                    word_t expected_hash_suffix = BitvectorSuffix::constructHashSuffix(words[j], suffix_len);
+                    word_t expected_hash_suffix = BitvectorSuffix::constructHashSuffix(key, suffix_len);
                     ASSERT_EQ(expected_hash_suffix, hash_suffix);
 
                     word_t real_suffix = BitvectorSuffix::extractRealSuffix(suffix, suffix_len);
@@ -188,7 +198,15 @@ namespace surf {
                     else
                         builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio,
                                                    suffix_type, suffix_len, suffix_len);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
 
                     level_t height = builder_->getLabels().size();
                     std::vector<position_t> num_suffix_bits_per_level;
@@ -234,7 +252,15 @@ namespace surf {
                     else
                         builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio,
                                                    suffix_type, suffix_len, suffix_len);
-                    builder_->build(words);
+                    std::vector< std::vector<label_t>> keys;
+                    for (const std::string &keyStr : words) {
+                        std::vector<label_t> key;
+                        for (int i=0; i<keyStr.length(); i++) {
+                            key.emplace_back(keyStr[i]);
+                        }
+                        keys.emplace_back(key);
+                    }
+                    builder_->build(keys);
 
                     level_t height = builder_->getLabels().size();
                     std::vector<position_t> num_suffix_bits_per_level;

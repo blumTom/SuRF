@@ -56,7 +56,15 @@ namespace surf {
         };
 
         void RankUnitTest::setupWordsTest() {
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             for (level_t level = 0; level < builder_->getTreeHeight(); level++)
                 num_items_per_level_.push_back(builder_->getLabels()[level].size());
             for (level_t level = 0; level < num_items_per_level_.size(); level++)

@@ -340,7 +340,15 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(words);
+                std::vector< std::vector<label_t>> keys;
+                for (const std::string &keyStr : words) {
+                    std::vector<label_t> key;
+                    for (int i=0; i<keyStr.length(); i++) {
+                        key.emplace_back(keyStr[i]);
+                    }
+                    keys.emplace_back(key);
+                }
+                builder_->build(keys);
                 testSparse(words, words_trunc_);
                 delete builder_;
             }
@@ -353,7 +361,15 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(words_dup);
+                std::vector< std::vector<label_t>> keys;
+                for (const std::string &keyStr : words_dup) {
+                    std::vector<label_t> key;
+                    for (int i=0; i<keyStr.length(); i++) {
+                        key.emplace_back(keyStr[i]);
+                    }
+                    keys.emplace_back(key);
+                }
+                builder_->build(keys);
                 testSparse(words, words_trunc_);
                 delete builder_;
             }
@@ -366,7 +382,15 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(ints_);
+                std::vector< std::vector<label_t>> keys;
+                for (const std::string &keyStr : ints_) {
+                    std::vector<label_t> key;
+                    for (int i=0; i<keyStr.length(); i++) {
+                        key.emplace_back(keyStr[i]);
+                    }
+                    keys.emplace_back(key);
+                }
+                builder_->build(keys);
                 testSparse(ints_, ints_trunc_);
                 delete builder_;
             }
@@ -379,7 +403,15 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(words);
+                std::vector< std::vector<label_t>> keys;
+                for (const std::string &keyStr : words) {
+                    std::vector<label_t> key;
+                    for (int i=0; i<keyStr.length(); i++) {
+                        key.emplace_back(keyStr[i]);
+                    }
+                    keys.emplace_back(key);
+                }
+                builder_->build(keys);
                 testDense();
                 delete builder_;
             }
@@ -392,7 +424,15 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(ints_);
+                std::vector< std::vector<label_t>> keys;
+                for (const std::string &keyStr : ints_) {
+                    std::vector<label_t> key;
+                    for (int i=0; i<keyStr.length(); i++) {
+                        key.emplace_back(keyStr[i]);
+                    }
+                    keys.emplace_back(key);
+                }
+                builder_->build(keys);
                 testDense();
                 delete builder_;
             }

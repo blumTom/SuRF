@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "config.hpp"
 #include "hash.hpp"
@@ -33,7 +34,7 @@ namespace surf {
         // through a single scan of the sorted key list.
         // After build, the member vectors are used in SuRF constructor.
         // REQUIRED: provided key list must be sorted.
-        void build(const std::vector<std::string> &keys);
+        void build(const std::vector<std::vector<label_t>> &keys);
 
         static bool readBit(const std::vector<word_t> &bits, const position_t pos) {
             assert(pos < (bits.size() * kWordSize));
@@ -115,9 +116,17 @@ namespace surf {
             return a.compare(b) == 0;
         }
 
+        static bool isSameKey(const std::vector<label_t> &a, const std::vector<label_t> &b, position_t limit) {
+            if (a.size() < limit || b.size() < limit) return false;
+            for (int i=0; i<limit && i<a.size(); i++) {
+                if (a[i] != b[i]) return false;
+            }
+            return true;
+        }
+
         // Fill in the LOUDS-Sparse vectors through a single scan
         // of the sorted key list.
-        void buildSparse(const std::vector<std::string> &keys);
+        void buildSparse(const std::vector<std::vector<label_t>> &keys);
 
         // Walks down the current partially-filled trie by comparing key to
         // its previous key in the list until their prefixes do not match.
@@ -125,7 +134,7 @@ namespace surf {
         // label vector.
         // For each matching prefix byte(label), it sets the corresponding
         // child indicator bit to 1 for that label.
-        level_t skipCommonPrefix(const std::string &key);
+        level_t skipCommonPrefix(const std::vector<label_t> &key);
 
         // Starting at the start_level of the trie, the function inserts
         // key bytes to the trie vectors until the first byte/label where
@@ -133,10 +142,10 @@ namespace surf {
         // This function is called after skipCommonPrefix. Therefore, it
         // guarantees that the stored prefix of key is unique in the trie.
         level_t
-        insertKeyBytesToTrieUntilUnique(const std::string &key, const std::string &next_key, const level_t start_level);
+        insertKeyBytesToTrieUntilUnique(const std::vector<label_t> &key, const std::vector<label_t> &next_key, const level_t start_level);
 
         // Fills in the suffix byte for key
-        inline void insertSuffix(const std::string &key, const level_t level);
+        inline void insertSuffix(const std::vector<label_t> &key, const level_t level);
 
         inline bool isCharCommonPrefix(const label_t c, const level_t level) const;
 
@@ -202,7 +211,7 @@ namespace surf {
         std::vector<bool> is_last_item_terminator_;
     };
 
-    void SuRFBuilder::build(const std::vector<std::string> &keys) {
+    void SuRFBuilder::build(const std::vector<std::vector<label_t>> &keys) {
         assert(keys.size() > 0);
         buildSparse(keys);
         if (include_dense_) {
@@ -211,35 +220,35 @@ namespace surf {
         }
     }
 
-    void SuRFBuilder::buildSparse(const std::vector<std::string> &keys) {
+    void SuRFBuilder::buildSparse(const std::vector<std::vector<label_t>> &keys) {
         for (position_t i = 0; i < keys.size(); i++) {
             level_t level = skipCommonPrefix(keys[i]);
             position_t curpos = i;
 
-            while ((i + 1 < keys.size()) && isSameKey(keys[curpos], keys[i + 1])) i++;
+            while ((i + 1 < keys.size()) && isSameKey(keys[curpos], keys[i + 1], std::max(keys[curpos].size(),keys[i + 1].size()))) i++;
 
             if (i < keys.size() - 1) {
                 level = insertKeyBytesToTrieUntilUnique(keys[curpos], keys[i + 1], level);
             } else {// for last key, there is no successor key in the list
-                level = insertKeyBytesToTrieUntilUnique(keys[curpos], std::string(), level);
+                level = insertKeyBytesToTrieUntilUnique(keys[curpos], std::vector<label_t>(0), level);
             }
 
             insertSuffix(keys[curpos], level);
         }
     }
 
-    level_t SuRFBuilder::skipCommonPrefix(const std::string &key) {
+    level_t SuRFBuilder::skipCommonPrefix(const std::vector<label_t> &key) {
         level_t level = 0;
-        while (level < key.length() && isCharCommonPrefix((label_t) key[level], level)) {
+        while (level < key.size() && isCharCommonPrefix((label_t) key[level], level)) {
             setBit(child_indicator_bits_[level], getNumItems(level) - 1);
             level++;
         }
         return level;
     }
 
-    level_t SuRFBuilder::insertKeyBytesToTrieUntilUnique(const std::string &key, const std::string &next_key,
+    level_t SuRFBuilder::insertKeyBytesToTrieUntilUnique(const std::vector<label_t> &key, const std::vector<label_t> &next_key,
                                                          const level_t start_level) {
-        assert(start_level < key.length());
+        assert(start_level < key.size());
 
         level_t level = start_level;
         bool is_start_of_node = false;
@@ -251,18 +260,18 @@ namespace surf {
         // shoud be in an the node as the previous key.
         insertKeyByte(key[level], level, is_start_of_node, is_term);
         level++;
-        if (level > next_key.length() || !isSameKey(key.substr(0, level), next_key.substr(0, level))) return level;
+        if (level > next_key.size() || !isSameKey(key, next_key, level)) return level;
 
         // All the following bytes inserted must be the start of a
         // new node.
         is_start_of_node = true;
-        while (level < key.length() && level < next_key.length() && key[level] == next_key[level]) {
+        while (level < key.size() && level < next_key.size() && key[level] == next_key[level]) {
             insertKeyByte(key[level], level, is_start_of_node, is_term);
             level++;
         }
 
         // The last byte inserted makes key unique in the trie.
-        if (level < key.length()) {
+        if (level < key.size()) {
             insertKeyByte(key[level], level, is_start_of_node, is_term);
         } else {
             is_term = true;
@@ -273,12 +282,11 @@ namespace surf {
         return level;
     }
 
-    inline void SuRFBuilder::insertSuffix(const std::string &key, const level_t level) {
+    inline void SuRFBuilder::insertSuffix(const std::vector<label_t> &key, const level_t level) {
         if (level >= getTreeHeight())
             addLevel();
         assert(level - 1 < suffixes_.size());
-        word_t suffix_word = BitvectorSuffix::constructSuffix(suffix_type_, key, hash_suffix_len_,
-                                                              level, real_suffix_len_);
+        word_t suffix_word = BitvectorSuffix::constructSuffix(suffix_type_, key, hash_suffix_len_, level, real_suffix_len_);
         storeSuffix(level, suffix_word);
     }
 

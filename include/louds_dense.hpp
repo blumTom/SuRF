@@ -43,7 +43,7 @@ namespace surf {
                         (is_move_left_complete_ && is_move_right_complete_));
             }
 
-            int compare(const std::string &key) const;
+            int compare(const std::vector<label_t> &key) const;
 
             std::string getKey() const;
 
@@ -106,9 +106,14 @@ namespace surf {
 
         // Returns whether key exists in the trie so far
         // out_node_num == 0 means search terminates in louds-dense.
+        bool lookupKey(const std::vector<label_t> &key, position_t &out_node_num) const;
+
         bool lookupKey(const std::string &key, position_t &out_node_num) const;
 
         // return value indicates potential false positive
+        bool moveToKeyGreaterThan(const std::vector<label_t> &key,
+                                  const bool inclusive, LoudsDense::Iter &iter) const;
+
         bool moveToKeyGreaterThan(const std::string &key,
                                   const bool inclusive, LoudsDense::Iter &iter) const;
 
@@ -158,7 +163,7 @@ namespace surf {
 
         position_t getPrevPos(const position_t pos, bool *is_out_of_bound) const;
 
-        bool compareSuffixGreaterThan(const position_t pos, const std::string &key,
+        bool compareSuffixGreaterThan(const position_t pos, const std::vector<label_t> &key,
                                       const level_t level, const bool inclusive,
                                       LoudsDense::Iter &iter) const;
 
@@ -206,12 +211,12 @@ namespace surf {
         }
     }
 
-    bool LoudsDense::lookupKey(const std::string &key, position_t &out_node_num) const {
+    bool LoudsDense::lookupKey(const std::vector<label_t> &key, position_t &out_node_num) const {
         position_t node_num = 0;
         position_t pos = 0;
         for (level_t level = 0; level < height_; level++) {
             pos = (node_num * kNodeFanout);
-            if (level >= key.length()) { //if run out of searchKey bytes
+            if (level >= key.size()) { //if run out of searchKey bytes
                 if (prefixkey_indicator_bits_->readBit(node_num)) //if the prefix is also a key
                     return suffixes_->checkEquality(getSuffixPos(pos, true), key, level + 1);
                 else
@@ -234,14 +239,18 @@ namespace surf {
         return true;
     }
 
-    bool LoudsDense::moveToKeyGreaterThan(const std::string &key,
+    bool LoudsDense::lookupKey(const std::string &key, position_t &out_node_num) const {
+        return lookupKey(stringToByteVector(key),out_node_num);
+    }
+
+    bool LoudsDense::moveToKeyGreaterThan(const std::vector<label_t> &key,
                                           const bool inclusive, LoudsDense::Iter &iter) const {
         position_t node_num = 0;
         position_t pos = 0;
         for (level_t level = 0; level < height_; level++) {
             // if is_at_prefix_key_, pos is at the next valid position in the child node
             pos = node_num * kNodeFanout;
-            if (level >= key.length()) { // if run out of searchKey bytes
+            if (level >= key.size()) { // if run out of searchKey bytes
                 iter.append(getNextPos(pos - 1));
                 if (prefixkey_indicator_bits_->readBit(node_num)) //if the prefix is also a key
                     iter.is_at_prefix_key_ = true;
@@ -271,6 +280,11 @@ namespace surf {
         // valid, search INCOMPLETE, moveLeft complete, moveRight complete
         iter.setFlags(true, false, true, true);
         return true;
+    }
+
+    bool LoudsDense::moveToKeyGreaterThan(const std::string &key,
+                                          const bool inclusive, LoudsDense::Iter &iter) const {
+        return moveToKeyGreaterThan(stringToByteVector(key),inclusive,iter);
     }
 
     uint64_t LoudsDense::serializedSize() const {
@@ -320,7 +334,7 @@ namespace surf {
         return (pos - distance);
     }
 
-    bool LoudsDense::compareSuffixGreaterThan(const position_t pos, const std::string &key,
+    bool LoudsDense::compareSuffixGreaterThan(const position_t pos, const std::vector<label_t> &key,
                                               const level_t level, const bool inclusive,
                                               LoudsDense::Iter &iter) const {
         position_t suffix_pos = getSuffixPos(pos, false);
@@ -342,11 +356,15 @@ namespace surf {
         is_at_prefix_key_ = false;
     }
 
-    int LoudsDense::Iter::compare(const std::string &key) const {
-        if (is_at_prefix_key_ && (key_len_ - 1) < key.length())
+    int LoudsDense::Iter::compare(const std::vector<label_t> &key) const {
+        if (is_at_prefix_key_ && (key_len_ - 1) < key.size())
             return -1;
         std::string iter_key = getKey();
-        std::string key_dense = key.substr(0, iter_key.length());
+        std::string key_dense = "";
+        for (int i=0; i<iter_key.length(); i++) {
+            key_dense.append(1,(char) key[i]);
+        }
+        //key.substr(0, iter_key.length());
         int compare = iter_key.compare(key_dense);
         if (compare != 0) return compare;
         if (isComplete()) {

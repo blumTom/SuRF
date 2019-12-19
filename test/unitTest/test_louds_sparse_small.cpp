@@ -40,7 +40,15 @@ namespace surf {
             keys.push_back(std::string("try"));
 
             SuRFBuilder *builder = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
-            builder->build(keys);
+            std::vector< std::vector<label_t>> keysV;
+            for (const std::string &keyStr : keys) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keysV.emplace_back(key);
+            }
+            builder->build(keysV);
             LoudsSparse *louds_sparse = new LoudsSparse(builder);
             LoudsSparse::Iter iter(louds_sparse);
 

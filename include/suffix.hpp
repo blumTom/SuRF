@@ -33,16 +33,16 @@ namespace surf {
             real_suffix_len_ = real_suffix_len;
         }
 
-        static word_t constructHashSuffix(const std::string &key, const level_t len) {
+        static word_t constructHashSuffix(const std::vector<label_t> &key, const level_t len) {
             word_t suffix = suffixHash(key);
             suffix <<= (kWordSize - len - kHashShift);
             suffix >>= (kWordSize - len);
             return suffix;
         }
 
-        static word_t constructRealSuffix(const std::string &key,
+        static word_t constructRealSuffix(const std::vector<label_t> &key,
                                           const level_t level, const level_t len) {
-            if (key.length() < level || ((key.length() - level) * 8) < len)
+            if (key.size() < level || ((key.size() - level) * 8) < len)
                 return 0;
             word_t suffix = 0;
             level_t num_complete_bytes = len / 8;
@@ -64,7 +64,7 @@ namespace surf {
             return suffix;
         }
 
-        static word_t constructMixedSuffix(const std::string &key, const level_t hash_len,
+        static word_t constructMixedSuffix(const std::vector<label_t> &key, const level_t hash_len,
                                            const level_t real_level, const level_t real_len) {
             word_t hash_suffix = constructHashSuffix(key, hash_len);
             word_t real_suffix = constructRealSuffix(key, real_level, real_len);
@@ -74,7 +74,7 @@ namespace surf {
             return suffix;
         }
 
-        static word_t constructSuffix(const SuffixType type, const std::string &key,
+        static word_t constructSuffix(const SuffixType type, const std::vector<label_t> &key,
                                       const level_t hash_len,
                                       const level_t real_level, const level_t real_len) {
             switch (type) {
@@ -131,11 +131,11 @@ namespace surf {
 
         word_t readReal(const position_t idx) const;
 
-        bool checkEquality(const position_t idx, const std::string &key, const level_t level) const;
+        bool checkEquality(const position_t idx, const std::vector<label_t> &key, const level_t level) const;
 
         // Compare stored suffix to querying suffix.
         // kReal suffix type only.
-        int compare(const position_t idx, const std::string &key, const level_t level) const;
+        int compare(const position_t idx, const std::vector<label_t> &key, const level_t level) const;
 
         void serialize(char *&dst) const {
             memcpy(dst, &num_bits_, sizeof(num_bits_));
@@ -204,11 +204,16 @@ namespace surf {
     }
 
     bool BitvectorSuffix::checkEquality(const position_t idx,
-                                        const std::string &key, const level_t level) const {
+                                        const std::vector<label_t> &key, const level_t level) const {
         if (type_ == kNone)
             return true;
         if (idx * getSuffixLen() >= num_bits_)
             return false;
+
+        /*std::vector<label_t> key;
+        for (int i=0; i<keyStr.length(); i++) {
+            key.emplace_back(keyStr[i]);
+        }*/
 
         word_t stored_suffix = read(idx);
         if (type_ == kReal) {
@@ -216,7 +221,7 @@ namespace surf {
             if (stored_suffix == 0)
                 return true;
             // if the querying key is shorter than the stored key
-            if (key.length() < level || ((key.length() - level) * 8) < real_suffix_len_)
+            if (key.size() < level || ((key.size() - level) * 8) < real_suffix_len_)
                 return false;
         }
         word_t querying_suffix
@@ -245,9 +250,14 @@ namespace surf {
 // }
 
     int BitvectorSuffix::compare(const position_t idx,
-                                 const std::string &key, const level_t level) const {
+                                 const std::vector<label_t> &key, const level_t level) const {
         if ((idx * getSuffixLen() >= num_bits_) || (type_ == kNone) || (type_ == kHash))
             return kCouldBePositive;
+
+        /*std::vector<label_t> key;
+        for (int i=0; i<keyStr.length(); i++) {
+            key.emplace_back(keyStr[i]);
+        }*/
 
         word_t stored_suffix = read(idx);
         word_t querying_suffix = constructRealSuffix(key, level, real_suffix_len_);

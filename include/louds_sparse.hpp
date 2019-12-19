@@ -31,7 +31,7 @@ namespace surf {
 
             bool isValid() const { return is_valid_; };
 
-            int compare(const std::string &key) const;
+            int compare(const std::vector<label_t> &key) const;
 
             std::string getKey() const;
 
@@ -85,9 +85,14 @@ namespace surf {
 
         // point query: trie walk starts at node "in_node_num" instead of root
         // in_node_num is provided by louds-dense's lookupKey function
+        bool lookupKey(const std::vector<label_t> &key, const position_t in_node_num) const;
+
         bool lookupKey(const std::string &key, const position_t in_node_num) const;
 
         // return value indicates potential false positive
+        bool moveToKeyGreaterThan(const std::vector<label_t> &key,
+                                  const bool inclusive, LoudsSparse::Iter &iter) const;
+
         bool moveToKeyGreaterThan(const std::string &key,
                                   const bool inclusive, LoudsSparse::Iter &iter) const;
 
@@ -159,7 +164,7 @@ namespace surf {
                                      const label_t label, LoudsSparse::Iter &iter) const;
 
         // return value indicates potential false positive
-        bool compareSuffixGreaterThan(const position_t pos, const std::string &key,
+        bool compareSuffixGreaterThan(const position_t pos, const std::vector<label_t> &key,
                                       const level_t level, const bool inclusive,
                                       LoudsSparse::Iter &iter) const;
 
@@ -222,10 +227,14 @@ namespace surf {
     }
 
     bool LoudsSparse::lookupKey(const std::string &key, const position_t in_node_num) const {
+        return lookupKey(stringToByteVector(key),in_node_num);
+    }
+
+    bool LoudsSparse::lookupKey(const std::vector<label_t> &key, const position_t in_node_num) const {
         position_t node_num = in_node_num;
         position_t pos = getFirstLabelPos(node_num);
         level_t level = 0;
-        for (level = start_level_; level < key.length(); level++) {
+        for (level = start_level_; level < key.size(); level++) {
             //child_indicator_bits_->prefetch(pos);
             if (!labels_->search((label_t) key[level], pos, nodeSize(pos)))
                 return false;
@@ -243,13 +252,13 @@ namespace surf {
         return false;
     }
 
-    bool LoudsSparse::moveToKeyGreaterThan(const std::string &key,
+    bool LoudsSparse::moveToKeyGreaterThan(const std::vector<label_t> &key,
                                            const bool inclusive, LoudsSparse::Iter &iter) const {
         position_t node_num = iter.getStartNodeNum();
         position_t pos = getFirstLabelPos(node_num);
 
         level_t level;
-        for (level = start_level_; level < key.length(); level++) {
+        for (level = start_level_; level < key.size(); level++) {
             position_t node_size = nodeSize(pos);
             // if no exact match
             if (!labels_->search((label_t) key[level], pos, node_size)) {
@@ -279,13 +288,18 @@ namespace surf {
             return false;
         }
 
-        if (key.length() <= level) {
+        if (key.size() <= level) {
             iter.moveToLeftMostKey();
             return false;
         }
 
         iter.is_valid_ = true;
         return true;
+    }
+
+    bool LoudsSparse::moveToKeyGreaterThan(const std::string &key,
+                                           const bool inclusive, LoudsSparse::Iter &iter) const {
+        return moveToKeyGreaterThan(stringToByteVector(key),inclusive,iter);
     }
 
     uint64_t LoudsSparse::serializedSize() const {
@@ -348,7 +362,7 @@ namespace surf {
         }
     }
 
-    bool LoudsSparse::compareSuffixGreaterThan(const position_t pos, const std::string &key,
+    bool LoudsSparse::compareSuffixGreaterThan(const position_t pos, const std::vector<label_t> &key,
                                                const level_t level, const bool inclusive,
                                                LoudsSparse::Iter &iter) const {
         position_t suffix_pos = getSuffixPos(pos);
@@ -369,17 +383,21 @@ namespace surf {
         is_at_terminator_ = false;
     }
 
-    int LoudsSparse::Iter::compare(const std::string &key) const {
-        if (is_at_terminator_ && (key_len_ - 1) < (key.length() - start_level_))
+    int LoudsSparse::Iter::compare(const std::vector<label_t> &key) const {
+        if (is_at_terminator_ && (key_len_ - 1) < (key.size() - start_level_))
             return -1;
         std::string iter_key = getKey();
-        std::string key_sparse = key.substr(start_level_);
+        std::string key_sparse = "";
+        for (int i=start_level_; i<key.size(); i++) {
+            key_sparse.append(1,(char) key[i]);
+        }
+        //std::string key_sparse = key.substr(start_level_);
         std::string key_sparse_same_length = key_sparse.substr(0, iter_key.length());
         int compare = iter_key.compare(key_sparse_same_length);
         if (compare != 0)
             return compare;
         position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1]);
-        return trie_->suffixes_->compare(suffix_pos, key_sparse, key_len_);
+        return trie_->suffixes_->compare(suffix_pos, stringToByteVector(key_sparse), key_len_);
     }
 
     std::string LoudsSparse::Iter::getKey() const {

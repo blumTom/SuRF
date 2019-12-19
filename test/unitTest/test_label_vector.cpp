@@ -46,7 +46,15 @@ namespace surf {
         };
 
         void LabelVectorUnitTest::setupWordsTest() {
-            builder_->build(words);
+            std::vector< std::vector<label_t>> keys;
+            for (const std::string &keyStr : words) {
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                keys.emplace_back(key);
+            }
+            builder_->build(keys);
             labels_ = new LabelVector(builder_->getLabels());
         }
 
