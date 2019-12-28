@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <optional>
 
 #include "config.hpp"
 #include "hash.hpp"
@@ -34,7 +35,7 @@ namespace surf {
         // through a single scan of the sorted key list.
         // After build, the member vectors are used in SuRF constructor.
         // REQUIRED: provided key list must be sorted.
-        void build(const std::vector<std::vector<label_t>> &keys);
+        void build(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys);
 
         static bool readBit(const std::vector<word_t> &bits, const position_t pos) {
             assert(pos < (bits.size() * kWordSize));
@@ -111,6 +112,10 @@ namespace surf {
             return real_suffix_len_;
         }
 
+        std::vector<std::vector<uint64_t>> getValues() const {
+            return values_;
+        }
+
     private:
         static bool isSameKey(const std::string &a, const std::string &b) {
             return a.compare(b) == 0;
@@ -126,7 +131,7 @@ namespace surf {
 
         // Fill in the LOUDS-Sparse vectors through a single scan
         // of the sorted key list.
-        void buildSparse(const std::vector<std::vector<label_t>> &keys);
+        void buildSparse(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys);
 
         // Walks down the current partially-filled trie by comparing key to
         // its previous key in the list until their prefixes do not match.
@@ -142,7 +147,7 @@ namespace surf {
         // This function is called after skipCommonPrefix. Therefore, it
         // guarantees that the stored prefix of key is unique in the trie.
         level_t
-        insertKeyBytesToTrieUntilUnique(const std::vector<label_t> &key, const std::vector<label_t> &next_key, const level_t start_level);
+        insertKeyBytesToTrieUntilUnique(const std::vector<label_t> &key, const uint64_t value, const std::vector<label_t> &next_key, const level_t start_level);
 
         // Fills in the suffix byte for key
         inline void insertSuffix(const std::vector<label_t> &key, const level_t level);
@@ -209,9 +214,11 @@ namespace surf {
         // auxiliary per level bookkeeping vectors
         std::vector<position_t> node_counts_;
         std::vector<bool> is_last_item_terminator_;
+
+        std::vector<std::vector<uint64_t>> values_;
     };
 
-    void SuRFBuilder::build(const std::vector<std::vector<label_t>> &keys) {
+    void SuRFBuilder::build(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys) {
         assert(keys.size() > 0);
         buildSparse(keys);
         if (include_dense_) {
@@ -220,20 +227,20 @@ namespace surf {
         }
     }
 
-    void SuRFBuilder::buildSparse(const std::vector<std::vector<label_t>> &keys) {
+    void SuRFBuilder::buildSparse(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys) {
         for (position_t i = 0; i < keys.size(); i++) {
-            level_t level = skipCommonPrefix(keys[i]);
+            level_t level = skipCommonPrefix(keys[i].first);
             position_t curpos = i;
 
-            while ((i + 1 < keys.size()) && isSameKey(keys[curpos], keys[i + 1], std::max(keys[curpos].size(),keys[i + 1].size()))) i++;
+            while ((i + 1 < keys.size()) && isSameKey(keys[curpos].first, keys[i + 1].first, std::max(keys[curpos].first.size(),keys[i + 1].first.size()))) i++;
 
             if (i < keys.size() - 1) {
-                level = insertKeyBytesToTrieUntilUnique(keys[curpos], keys[i + 1], level);
+                level = insertKeyBytesToTrieUntilUnique(keys[curpos].first, keys[curpos].second, keys[i + 1].first, level);
             } else {// for last key, there is no successor key in the list
-                level = insertKeyBytesToTrieUntilUnique(keys[curpos], std::vector<label_t>(0), level);
+                level = insertKeyBytesToTrieUntilUnique(keys[curpos].first, keys[curpos].second, std::vector<label_t>(0), level);
             }
 
-            insertSuffix(keys[curpos], level);
+            insertSuffix(keys[curpos].first, level);
         }
     }
 
@@ -246,7 +253,7 @@ namespace surf {
         return level;
     }
 
-    level_t SuRFBuilder::insertKeyBytesToTrieUntilUnique(const std::vector<label_t> &key, const std::vector<label_t> &next_key,
+    level_t SuRFBuilder::insertKeyBytesToTrieUntilUnique(const std::vector<label_t> &key, const uint64_t value, const std::vector<label_t> &next_key,
                                                          const level_t start_level) {
         assert(start_level < key.size());
 
@@ -260,7 +267,10 @@ namespace surf {
         // shoud be in an the node as the previous key.
         insertKeyByte(key[level], level, is_start_of_node, is_term);
         level++;
-        if (level > next_key.size() || !isSameKey(key, next_key, level)) return level;
+        if (level > next_key.size() || !isSameKey(key, next_key, level)) {
+            values_[level-1].push_back(value);
+            return level;
+        }
 
         // All the following bytes inserted must be the start of a
         // new node.
@@ -277,6 +287,7 @@ namespace surf {
             is_term = true;
             insertKeyByte(kTerminator, level, is_start_of_node, is_term);
         }
+        values_[level-1].push_back(value);
         level++;
 
         return level;
@@ -434,6 +445,7 @@ namespace surf {
     }
 
     void SuRFBuilder::addLevel() {
+        values_.push_back(std::vector<uint64_t>());
         labels_.push_back(std::vector<label_t>());
         child_indicator_bits_.push_back(std::vector<word_t>());
         louds_bits_.push_back(std::vector<word_t>());

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 #include "config.hpp"
 #include "louds_dense.hpp"
@@ -69,30 +70,36 @@ namespace surf {
         // Input keys must be SORTED
         //------------------------------------------------------------------
         SuRF(const std::vector<std::string> &keys) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const std::string &key : keys) {
-                keyStrs.emplace_back(stringToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(stringToByteVector(key),counter));
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
         }
 
         SuRF(const std::vector<uint32_t> &keys) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const uint32_t &key : keys) {
-                keyStrs.emplace_back(uint32ToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(uint32ToByteVector(key),counter));
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
         }
 
         SuRF(const std::vector<uint64_t> &keys) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const uint64_t key : keys) {
-                keyStrs.emplace_back(uint64ToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(uint64ToByteVector(key),counter));
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
@@ -102,10 +109,12 @@ namespace surf {
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const std::string &key : keys) {
-                keyStrs.emplace_back(stringToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(stringToByteVector(key),counter));
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -115,10 +124,12 @@ namespace surf {
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const uint32_t key : keys) {
-                keyStrs.emplace_back(uint32ToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(uint32ToByteVector(key),counter));
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -128,10 +139,12 @@ namespace surf {
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const uint64_t key : keys) {
-                keyStrs.emplace_back(uint64ToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(uint64ToByteVector(key),counter));
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -143,10 +156,12 @@ namespace surf {
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const std::string &key : keys) {
-                keyStrs.emplace_back(stringToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(stringToByteVector(key),counter));
             }
 
             create(keyStrs, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -158,10 +173,12 @@ namespace surf {
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const uint32_t key : keys) {
-                keyStrs.emplace_back(uint32ToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(uint32ToByteVector(key),counter));
             }
 
             create(keyStrs, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -173,10 +190,12 @@ namespace surf {
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len) {
-            std::vector<std::vector<label_t>> keyStrs;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
+            uint64_t counter = 0;
             for (const uint64_t key : keys) {
-                keyStrs.emplace_back(uint64ToByteVector(key));
+                counter++;
+                keyStrs.emplace_back(std::make_pair(uint64ToByteVector(key),counter));
             }
 
             create(keyStrs, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
@@ -184,18 +203,18 @@ namespace surf {
 
         ~SuRF() {}
 
-        void create(const std::vector<std::vector<label_t>> &keys,
+        void create(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
                     const bool include_dense,
                     const uint32_t sparse_dense_ratio,
                     const SuffixType suffix_type,
                     const level_t hash_suffix_len,
                     const level_t real_suffix_len);
 
-        bool lookupKey(const std::string &key) const;
+        std::optional<uint64_t> lookupKey(const std::string &key) const;
 
-        bool lookupKey(const uint32_t &key) const;
+        std::optional<uint64_t> lookupKey(const uint32_t &key) const;
 
-        bool lookupKey(const uint64_t &key) const;
+        std::optional<uint64_t> lookupKey(const uint64_t &key) const;
 
         // This function searches in a conservative way: if inclusive is true
         // and the stored key prefix matches key, iter stays at this key prefix.
@@ -268,10 +287,10 @@ namespace surf {
         SuRFBuilder *builder_;
         SuRF::Iter iter_;
 
-        bool lookupKey(const std::vector<label_t> &key) const;
+        std::optional<uint64_t> lookupKey(const std::vector<label_t> &key) const;
     };
 
-    void SuRF::create(const std::vector<std::vector<label_t>> &keys,
+    void SuRF::create(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
                       const bool include_dense,
                       const uint32_t sparse_dense_ratio,
                       const SuffixType suffix_type,
@@ -285,27 +304,30 @@ namespace surf {
         delete builder_;
     }
 
-    bool SuRF::lookupKey(const std::vector<label_t> &key) const {
+    std::optional<uint64_t> SuRF::lookupKey(const std::vector<label_t> &key) const {
         position_t connect_node_num = 0;
+        std::optional<uint64_t> result = std::nullopt;
 
-        if (!louds_dense_->lookupKey(key, connect_node_num)) {
-            return false;
-        } else if (connect_node_num != 0) {
-            return louds_sparse_->lookupKey(key, connect_node_num);
+        result = louds_dense_->lookupKey(key, connect_node_num);
+        if (result.has_value() && connect_node_num != 0) {
+            result = louds_sparse_->lookupKey(key, connect_node_num);
         }
 
-        return true;
+        return result;
     }
 
-    bool SuRF::lookupKey(const std::string &key) const {
+    std::optional<uint64_t> SuRF::lookupKey(const std::string &key) const {
+        std::cout << "Lookup key " << key << ": ";
         return lookupKey(stringToByteVector(key));
     }
 
-    bool SuRF::lookupKey(const uint32_t &key) const {
+    std::optional<uint64_t> SuRF::lookupKey(const uint32_t &key) const {
+        std::cout << "Lookup key " << key << ": ";
         return lookupKey(uint32ToByteVector(key));
     }
 
-    bool SuRF::lookupKey(const uint64_t &key) const {
+    std::optional<uint64_t> SuRF::lookupKey(const uint64_t &key) const {
+        std::cout << "Lookup key " << key << ": ";
         return lookupKey(uint64ToByteVector(key));
     }
 

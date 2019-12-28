@@ -85,9 +85,9 @@ namespace surf {
 
         // point query: trie walk starts at node "in_node_num" instead of root
         // in_node_num is provided by louds-dense's lookupKey function
-        bool lookupKey(const std::vector<label_t> &key, const position_t in_node_num) const;
+        std::optional<uint64_t> lookupKey(const std::vector<label_t> &key, const position_t in_node_num) const;
 
-        bool lookupKey(const std::string &key, const position_t in_node_num) const;
+        std::optional<uint64_t> lookupKey(const std::string &key, const position_t in_node_num) const;
 
         // return value indicates potential false positive
         bool moveToKeyGreaterThan(const std::vector<label_t> &key,
@@ -183,10 +183,14 @@ namespace surf {
         BitvectorRank *child_indicator_bits_;
         BitvectorSelect *louds_bits_;
         BitvectorSuffix *suffixes_;
+
+        std::vector<std::vector<uint64_t>> values_;
     };
 
 
     LoudsSparse::LoudsSparse(const SuRFBuilder *builder) {
+        values_ = builder->getValues();
+
         height_ = builder->getLabels().size();
         start_level_ = builder->getSparseStartLevel();
 
@@ -226,30 +230,53 @@ namespace surf {
         }
     }
 
-    bool LoudsSparse::lookupKey(const std::string &key, const position_t in_node_num) const {
+    std::optional<uint64_t> LoudsSparse::lookupKey(const std::string &key, const position_t in_node_num) const {
         return lookupKey(stringToByteVector(key),in_node_num);
     }
 
-    bool LoudsSparse::lookupKey(const std::vector<label_t> &key, const position_t in_node_num) const {
+    std::optional<uint64_t> LoudsSparse::lookupKey(const std::vector<label_t> &key, const position_t in_node_num) const {
         position_t node_num = in_node_num;
         position_t pos = getFirstLabelPos(node_num);
         level_t level = 0;
+
         for (level = start_level_; level < key.size(); level++) {
             //child_indicator_bits_->prefetch(pos);
             if (!labels_->search((label_t) key[level], pos, nodeSize(pos)))
-                return false;
+                return std::nullopt;
 
             // if trie branch terminates
-            if (!child_indicator_bits_->readBit(pos))
-                return suffixes_->checkEquality(getSuffixPos(pos), key, level + 1);
+            if (!child_indicator_bits_->readBit(pos)) {
+                if (suffixes_->checkEquality(getSuffixPos(pos), key, level + 1)) {
+                    position_t posInLevel = getSuffixPos(pos) + 1;
+                    for (int i=0;i<level - 1; i++) {
+                        posInLevel -= values_[i].size();
+                    }
+                    std::cout << posInLevel << level << "posInLevel\n";
+                    return values_[level-1][posInLevel];
+                } else {
+                    return std::nullopt;
+                }
+            }
 
             // move to child
             node_num = getChildNodeNum(pos);
             pos = getFirstLabelPos(node_num);
         }
-        if ((labels_->read(pos) == kTerminator) && (!child_indicator_bits_->readBit(pos)))
-            return suffixes_->checkEquality(getSuffixPos(pos), key, level + 1);
-        return false;
+
+        if ((labels_->read(pos) == kTerminator) && (!child_indicator_bits_->readBit(pos))) {
+            if (suffixes_->checkEquality(getSuffixPos(pos), key, level + 1)) {
+                position_t posInLevel = getSuffixPos(pos) + 1;
+                std::cout << posInLevel << "posInLevel\n";
+                for (int i = 0; i < level - 1; i++) {
+                    posInLevel -= values_[i].size();
+                }
+                std::cout << posInLevel << "posInLevel\n";
+                return values_[level-1][posInLevel];
+            } else {
+                return std::nullopt;
+            }
+        }
+        return std::nullopt;
     }
 
     bool LoudsSparse::moveToKeyGreaterThan(const std::vector<label_t> &key,

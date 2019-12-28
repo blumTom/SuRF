@@ -25,26 +25,26 @@ int main() {
      40        = 0x00000028
      */
     //std::cout << "Build Index with Keys: { 673786411, 2621483, 11048, 43, 40 }" << "\n";
-    std::vector<uint32_t> intKeys = { 16843265, 16843009, 16843266, 16843010, 16843267, 16843011 };
+    /*std::vector<uint32_t> intKeys = { 16843265, 16843009, 16843266, 16843010, 16843267, 16843011 };
 
     // basic surf
     SuRF *surfIntegerIndex = new SuRF(intKeys);
     uint32_t integerKey = 16843009;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843010;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843011;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843012;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843265;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843266;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843267;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
     integerKey = 16843268;
-    surfIntegerIndex->lookupKey(integerKey);
+    std::cout << "Value: " << surfIntegerIndex->lookupKey(integerKey).has_value() << "\n";
 
     uint32_t leftIntegerKey = 39;
     uint32_t rightIntegerKey = 78;
@@ -64,7 +64,7 @@ int main() {
                                                                                              : "Not found key in range ")
               << (left_included ? "(" : ")") << leftIntegerKey << "," << rightIntegerKey << (right_included ? ")" : "(")
               << "!\n";
-    std::cout << "\n";
+    std::cout << "\n";*/
 
     SuRF *surf = new SuRF(keys);
 
@@ -82,23 +82,27 @@ int main() {
 
     std::string key = "fase";
 
-    if (surf->lookupKey(key))
-        std::cout << "False Positive: " << key << " found in basic SuRF" << std::endl;
+    std::optional<uint64_t> result = surf->lookupKey(key);
+    if (result.has_value())
+        std::cout << "False Positive: " << key << " found in basic SuRF: " << result.value() << std::endl;
     else
         std::cout << "Correct: " << key << " NOT found in basic SuRF" << std::endl;
 
-    if (surf_hash->lookupKey(key))
-        std::cout << "False Positive: " << key << " found in SuRF hash" << std::endl;
+    result = surf_hash->lookupKey(key);
+    if (result.has_value())
+        std::cout << "False Positive: " << key << " found in SuRF hash: " << result.value() << std::endl;
     else
         std::cout << "Correct: " << key << " NOT found in SuRF hash" << std::endl;
 
-    if (surf_real->lookupKey(key))
-        std::cout << "False Positive: " << key << " found in SuRF real" << std::endl;
+    result = surf_real->lookupKey(key);
+    if (result.has_value())
+        std::cout << "False Positive: " << key << " found in SuRF real: " << result.value() << std::endl;
     else
         std::cout << "Correct: " << key << " NOT found in SuRF real" << std::endl;
 
-    if (surf_mixed->lookupKey(key))
-        std::cout << "False Positive: " << key << " found in SuRF mixed" << std::endl;
+    result = surf_mixed->lookupKey(key);
+    if (result.has_value())
+        std::cout << "False Positive: " << key << " found in SuRF mixed: " << result.value() << std::endl;
     else
         std::cout << "Correct: " << key << " NOT found in SuRF mixed" << std::endl;
 

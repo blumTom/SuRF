@@ -106,9 +106,9 @@ namespace surf {
 
         // Returns whether key exists in the trie so far
         // out_node_num == 0 means search terminates in louds-dense.
-        bool lookupKey(const std::vector<label_t> &key, position_t &out_node_num) const;
+        std::optional<uint64_t> lookupKey(const std::vector<label_t> &key, position_t &out_node_num) const;
 
-        bool lookupKey(const std::string &key, position_t &out_node_num) const;
+        std::optional<uint64_t> lookupKey(const std::string &key, position_t &out_node_num) const;
 
         // return value indicates potential false positive
         bool moveToKeyGreaterThan(const std::vector<label_t> &key,
@@ -177,10 +177,14 @@ namespace surf {
         BitvectorRank *child_indicator_bitmaps_;
         BitvectorRank *prefixkey_indicator_bits_; //1 bit per internal node
         BitvectorSuffix *suffixes_;
+
+        std::vector<std::vector<uint64_t>> values_;
     };
 
 
     LoudsDense::LoudsDense(const SuRFBuilder *builder) {
+        values_ = builder->getValues();
+
         height_ = builder->getSparseStartLevel();
         std::vector<position_t> num_bits_per_level;
         for (level_t level = 0; level < height_; level++)
@@ -211,35 +215,53 @@ namespace surf {
         }
     }
 
-    bool LoudsDense::lookupKey(const std::vector<label_t> &key, position_t &out_node_num) const {
+    std::optional<uint64_t> LoudsDense::lookupKey(const std::vector<label_t> &key, position_t &out_node_num) const {
         position_t node_num = 0;
         position_t pos = 0;
         for (level_t level = 0; level < height_; level++) {
             pos = (node_num * kNodeFanout);
             if (level >= key.size()) { //if run out of searchKey bytes
-                if (prefixkey_indicator_bits_->readBit(node_num)) //if the prefix is also a key
-                    return suffixes_->checkEquality(getSuffixPos(pos, true), key, level + 1);
-                else
-                    return false;
+                if (prefixkey_indicator_bits_->readBit(node_num)) { //if the prefix is also a key
+                    if (suffixes_->checkEquality(getSuffixPos(pos, true), key, level + 1)) {
+                        position_t posInLevel = getSuffixPos(pos, false) + 1;
+                        for (int i=0;i<level; i++) {
+                            posInLevel -= values_[i].size();
+                        }
+                        return values_[level][posInLevel];
+                    } else {
+                        return std::nullopt;
+                    }
+                } else {
+                    return std::nullopt;
+                }
             }
             pos += (label_t) key[level];
 
             //child_indicator_bitmaps_->prefetch(pos);
 
-            if (!label_bitmaps_->readBit(pos)) //if key byte does not exist
-                return false;
+            if (!label_bitmaps_->readBit(pos)) { //if key byte does not exist
+                return std::nullopt;
+            }
 
-            if (!child_indicator_bitmaps_->readBit(pos)) //if trie branch terminates
-                return suffixes_->checkEquality(getSuffixPos(pos, false), key, level + 1);
-
+            if (!child_indicator_bitmaps_->readBit(pos)) { //if trie branch terminates
+                if (suffixes_->checkEquality(getSuffixPos(pos, false), key, level + 1)) {
+                    position_t posInLevel = getSuffixPos(pos, false) + 1;
+                    for (int i=0;i<level; i++) {
+                        posInLevel -= values_[i].size();
+                    }
+                    return values_[level][posInLevel];
+                } else {
+                    return std::nullopt;
+                }
+            }
             node_num = getChildNodeNum(pos);
         }
         //search will continue in LoudsSparse
         out_node_num = node_num;
-        return true;
+        return 0;
     }
 
-    bool LoudsDense::lookupKey(const std::string &key, position_t &out_node_num) const {
+    std::optional<uint64_t> LoudsDense::lookupKey(const std::string &key, position_t &out_node_num) const {
         return lookupKey(stringToByteVector(key),out_node_num);
     }
 

@@ -58,19 +58,19 @@ namespace surf {
             return labels_[pos];
         }
 
-        bool search(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> search(const label_t target, position_t &pos, const position_t search_len) const;
 
-        bool searchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> searchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
 
-        bool binarySearch(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> binarySearch(const label_t target, position_t &pos, const position_t search_len) const;
 
-        bool simdSearch(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> simdSearch(const label_t target, position_t &pos, const position_t search_len) const;
 
-        bool linearSearch(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> linearSearch(const label_t target, position_t &pos, const position_t search_len) const;
 
-        bool binarySearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> binarySearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
 
-        bool linearSearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
+        std::optional<uint64_t> linearSearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
 
         void serialize(char *&dst) const {
             memcpy(dst, &num_bytes_, sizeof(num_bytes_));
@@ -99,7 +99,7 @@ namespace surf {
         label_t *labels_;
     };
 
-    bool LabelVector::search(const label_t target, position_t &pos, position_t search_len) const {
+    std::optional<uint64_t> LabelVector::search(const label_t target, position_t &pos, position_t search_len) const {
         //skip terminator label
         if ((search_len > 1) && (labels_[pos] == kTerminator)) {
             pos++;
@@ -114,7 +114,7 @@ namespace surf {
             return simdSearch(target, pos, search_len);
     }
 
-    bool LabelVector::searchGreaterThan(const label_t target, position_t &pos, position_t search_len) const {
+    std::optional<uint64_t> LabelVector::searchGreaterThan(const label_t target, position_t &pos, position_t search_len) const {
         //skip terminator label
         if ((search_len > 1) && (labels_[pos] == kTerminator)) {
             pos++;
@@ -127,7 +127,7 @@ namespace surf {
             return binarySearchGreaterThan(target, pos, search_len);
     }
 
-    bool LabelVector::binarySearch(const label_t target, position_t &pos, const position_t search_len) const {
+    std::optional<uint64_t> LabelVector::binarySearch(const label_t target, position_t &pos, const position_t search_len) const {
         position_t l = pos;
         position_t r = pos + search_len;
         while (l < r) {
@@ -136,15 +136,15 @@ namespace surf {
                 r = m;
             } else if (target == labels_[m]) {
                 pos = m;
-                return true;
+                return 0;
             } else {
                 l = m + 1;
             }
         }
-        return false;
+        return std::nullopt;
     }
 
-    bool LabelVector::simdSearch(const label_t target, position_t &pos, const position_t search_len) const {
+    std::optional<uint64_t> LabelVector::simdSearch(const label_t target, position_t &pos, const position_t search_len) const {
         position_t num_labels_searched = 0;
         position_t num_labels_left = search_len;
         while ((num_labels_left >> 4) > 0) {
@@ -154,7 +154,7 @@ namespace surf {
             unsigned check_bits = _mm_movemask_epi8(cmp);
             if (check_bits) {
                 pos += (num_labels_searched + __builtin_ctz(check_bits));
-                return true;
+                return 0;
             }
             num_labels_searched += 16;
             num_labels_left -= 16;
@@ -168,24 +168,24 @@ namespace surf {
             unsigned check_bits = _mm_movemask_epi8(cmp) & leftover_bits_mask;
             if (check_bits) {
                 pos += (num_labels_searched + __builtin_ctz(check_bits));
-                return true;
+                return 0;
             }
         }
 
-        return false;
+        return std::nullopt;
     }
 
-    bool LabelVector::linearSearch(const label_t target, position_t &pos, const position_t search_len) const {
+    std::optional<uint64_t> LabelVector::linearSearch(const label_t target, position_t &pos, const position_t search_len) const {
         for (position_t i = 0; i < search_len; i++) {
             if (target == labels_[pos + i]) {
                 pos += i;
-                return true;
+                return 0;
             }
         }
-        return false;
+        return std::nullopt;
     }
 
-    bool
+    std::optional<uint64_t>
     LabelVector::binarySearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const {
         position_t l = pos;
         position_t r = pos + search_len;
@@ -196,9 +196,9 @@ namespace surf {
             } else if (target == labels_[m]) {
                 if (m < pos + search_len - 1) {
                     pos = m + 1;
-                    return true;
+                    return 0;
                 }
-                return false;
+                return std::nullopt;
             } else {
                 l = m + 1;
             }
@@ -206,20 +206,20 @@ namespace surf {
 
         if (l < pos + search_len) {
             pos = l;
-            return true;
+            return 0;
         }
-        return false;
+        return std::nullopt;
     }
 
-    bool
+    std::optional<uint64_t>
     LabelVector::linearSearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const {
         for (position_t i = 0; i < search_len; i++) {
             if (labels_[pos + i] > target) {
                 pos += i;
-                return true;
+                return 0;
             }
         }
-        return false;
+        return std::nullopt;
     }
 
 } // namespace surf
