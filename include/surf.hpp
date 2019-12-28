@@ -43,6 +43,10 @@ namespace surf {
 
             bool operator--(int);
 
+            std::vector<position_t> getPosition(bool isDense) {
+                return isDense ? dense_iter_.getPositions() : sparse_iter_.getPosition();
+            }
+
         private:
             void passToSparse();
 
@@ -230,22 +234,22 @@ namespace surf {
 
         SuRF::Iter moveToLast() const;
 
-        bool lookupRange(const std::vector<label_t> &left_key,
+        std::vector<uint64_t> lookupRange(const std::vector<label_t> &left_key,
                          const bool left_inclusive,
                          const std::vector<label_t> &right_key,
                          const bool right_inclusive);
 
-        bool lookupRange(const std::string &left_key,
+        std::vector<uint64_t> lookupRange(const std::string &left_key,
                          const bool left_inclusive,
                          const std::string &right_key,
                          const bool right_inclusive);
 
-        bool lookupRange(const uint32_t &left_key,
+        std::vector<uint64_t> lookupRange(const uint32_t &left_key,
                          const bool left_inclusive,
                          const uint32_t &right_key,
                          const bool right_inclusive);
 
-        bool lookupRange(const uint64_t &left_key,
+        std::vector<uint64_t> lookupRange(const uint64_t &left_key,
                          const bool left_inclusive,
                          const uint64_t &right_key,
                          const bool right_inclusive);
@@ -414,11 +418,11 @@ namespace surf {
         return iter;
     }
 
-    bool SuRF::lookupRange(const std::vector<label_t> &left_key, const bool left_inclusive,
+    std::vector<uint64_t> SuRF::lookupRange(const std::vector<label_t> &left_key, const bool left_inclusive,
                            const std::vector<label_t> &right_key, const bool right_inclusive) {
         iter_.clear();
         louds_dense_->moveToKeyGreaterThan(left_key, left_inclusive, iter_.dense_iter_);
-        if (!iter_.dense_iter_.isValid()) return false;
+        if (!iter_.dense_iter_.isValid()) return std::vector<uint64_t>(0);
         if (!iter_.dense_iter_.isComplete()) {
             if (!iter_.dense_iter_.isSearchComplete()) {
                 iter_.passToSparse();
@@ -431,29 +435,34 @@ namespace surf {
                 iter_.sparse_iter_.moveToLeftMostKey();
             }
         }
-        if (!iter_.isValid()) return false;
-        int compare = iter_.compare(right_key);
-        if (compare == kCouldBePositive)
-            return true;
-        if (right_inclusive)
-            return (compare <= 0);
-        else
-            return (compare < 0);
+
+        std::vector<uint64_t> resultSet = std::vector<uint64_t>(0);
+        for (;iter_.isValid();iter_++) {
+            int compare = iter_.compare(right_key);
+            if (compare == kCouldBePositive ||
+                    (right_inclusive && (compare <= 0)) ||
+                    (!right_inclusive && (compare < 0))) {
+                std::string key = iter_.getKey();
+                resultSet.emplace_back(louds_sparse_->getValue(key.length() - 1, iter_.getPosition(key.length() < getSparseStartLevel())[key.length() - 1]));
+            }
+        }
+
+        return resultSet;
     }
 
-    bool SuRF::lookupRange(const std::string &left_key, const bool left_inclusive,
+    std::vector<uint64_t> SuRF::lookupRange(const std::string &left_key, const bool left_inclusive,
                            const std::string &right_key, const bool right_inclusive) {
         return lookupRange(stringToByteVector(left_key),left_inclusive,stringToByteVector(right_key),right_inclusive);
     }
 
-    bool SuRF::lookupRange(const uint32_t &left_key,
+    std::vector<uint64_t> SuRF::lookupRange(const uint32_t &left_key,
                            const bool left_inclusive,
                            const uint32_t &right_key,
                            const bool right_inclusive) {
         return lookupRange(uint32ToByteVector(left_key), left_inclusive, uint32ToByteVector(right_key), right_inclusive);
     }
 
-    bool SuRF::lookupRange(const uint64_t &left_key,
+    std::vector<uint64_t> SuRF::lookupRange(const uint64_t &left_key,
                            const bool left_inclusive,
                            const uint64_t &right_key,
                            const bool right_inclusive) {

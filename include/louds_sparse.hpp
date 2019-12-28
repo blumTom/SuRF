@@ -55,6 +55,10 @@ namespace surf {
 
             void operator--(int);
 
+            std::vector<position_t> getPosition() {
+                return pos_in_trie_;
+            }
+
         private:
             void append(const position_t pos);
 
@@ -103,6 +107,12 @@ namespace surf {
         uint64_t serializedSize() const;
 
         uint64_t getMemoryUsage() const;
+
+        uint64_t getValue(level_t level, position_t pos) const {
+            assert(values_.size() > level);
+            assert(values_[level].size() > pos);
+            return values_[level][pos];
+        }
 
         void serialize(char *&dst) const {
             memcpy(dst, &height_, sizeof(height_));
