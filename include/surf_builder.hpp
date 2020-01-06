@@ -287,7 +287,7 @@ namespace surf {
             is_term = true;
             insertKeyByte(kTerminator, level, is_start_of_node, is_term);
         }
-        values_[level-1].push_back(value);
+        values_[level].push_back(value);
         level++;
 
         return level;

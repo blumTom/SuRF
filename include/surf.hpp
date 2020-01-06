@@ -36,6 +36,8 @@ namespace surf {
 
             int getSuffix(word_t *suffix) const;
 
+            uint64_t getValue() const;
+
             std::string getKeyWithSuffix(unsigned *bitlen) const;
 
             // Returns true if the status of the iterator after the operation is valid
@@ -312,6 +314,7 @@ namespace surf {
         position_t connect_node_num = 0;
         std::optional<uint64_t> result = std::nullopt;
 
+
         result = louds_dense_->lookupKey(key, connect_node_num);
         if (result.has_value() && connect_node_num != 0) {
             result = louds_sparse_->lookupKey(key, connect_node_num);
@@ -321,17 +324,17 @@ namespace surf {
     }
 
     std::optional<uint64_t> SuRF::lookupKey(const std::string &key) const {
-        std::cout << "Lookup key " << key << ": ";
+        //std::cout << "Lookup key " << key << ": ";
         return lookupKey(stringToByteVector(key));
     }
 
     std::optional<uint64_t> SuRF::lookupKey(const uint32_t &key) const {
-        std::cout << "Lookup key " << key << ": ";
+        //std::cout << "Lookup key " << key << ": ";
         return lookupKey(uint32ToByteVector(key));
     }
 
     std::optional<uint64_t> SuRF::lookupKey(const uint64_t &key) const {
-        std::cout << "Lookup key " << key << ": ";
+        //std::cout << "Lookup key " << key << ": ";
         return lookupKey(uint64ToByteVector(key));
     }
 
@@ -442,8 +445,8 @@ namespace surf {
             if (compare == kCouldBePositive ||
                     (right_inclusive && (compare <= 0)) ||
                     (!right_inclusive && (compare < 0))) {
-                std::string key = iter_.getKey();
-                resultSet.emplace_back(louds_sparse_->getValue(key.length() - 1, iter_.getPosition(key.length() < getSparseStartLevel())[key.length() - 1]));
+                uint64_t value = iter_.getValue();
+                resultSet.emplace_back(value);
             }
         }
 
@@ -524,6 +527,14 @@ namespace surf {
         if (dense_iter_.isComplete())
             return dense_iter_.getSuffix(suffix);
         return sparse_iter_.getSuffix(suffix);
+    }
+
+    uint64_t SuRF::Iter::getValue() const {
+        if (!isValid())
+            return 0;
+        if (dense_iter_.isComplete())
+            return dense_iter_.getValue();
+        return sparse_iter_.getValue();
     }
 
     std::string SuRF::Iter::getKeyWithSuffix(unsigned *bitlen) const {

@@ -37,6 +37,8 @@ namespace surf {
 
             int getSuffix(word_t *suffix) const;
 
+            uint64_t getValue() const;
+
             std::string getKeyWithSuffix(unsigned *bitlen) const;
 
             position_t getStartNodeNum() const { return start_node_num_; };
@@ -110,6 +112,11 @@ namespace surf {
 
         uint64_t getValue(level_t level, position_t pos) const {
             assert(values_.size() > level);
+            int diff = 0;
+            for (int i=start_level_;i<level; i++) {
+                diff += values_[i].size();
+            }
+            pos -= diff;
             assert(values_[level].size() > pos);
             return values_[level][pos];
         }
@@ -257,12 +264,8 @@ namespace surf {
             // if trie branch terminates
             if (!child_indicator_bits_->readBit(pos)) {
                 if (suffixes_->checkEquality(getSuffixPos(pos), key, level + 1)) {
-                    position_t posInLevel = getSuffixPos(pos) + 1;
-                    for (int i=0;i<level - 1; i++) {
-                        posInLevel -= values_[i].size();
-                    }
-                    std::cout << posInLevel << level << "posInLevel\n";
-                    return values_[level-1][posInLevel];
+                    position_t posInLevel = getSuffixPos(pos);
+                    return getValue(level,posInLevel);
                 } else {
                     return std::nullopt;
                 }
@@ -275,13 +278,8 @@ namespace surf {
 
         if ((labels_->read(pos) == kTerminator) && (!child_indicator_bits_->readBit(pos))) {
             if (suffixes_->checkEquality(getSuffixPos(pos), key, level + 1)) {
-                position_t posInLevel = getSuffixPos(pos) + 1;
-                std::cout << posInLevel << "posInLevel\n";
-                for (int i = 0; i < level - 1; i++) {
-                    posInLevel -= values_[i].size();
-                }
-                std::cout << posInLevel << "posInLevel\n";
-                return values_[level-1][posInLevel];
+                position_t posInLevel = getSuffixPos(pos);
+                return getValue(level,posInLevel);
             } else {
                 return std::nullopt;
             }
@@ -454,6 +452,11 @@ namespace surf {
         }
         *suffix = 0;
         return 0;
+    }
+
+    uint64_t LoudsSparse::Iter::getValue() const {
+        position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1]);
+        return trie_->getValue(start_level_ + key_len_ - 1,suffix_pos);
     }
 
     std::string LoudsSparse::Iter::getKeyWithSuffix(unsigned *bitlen) const {

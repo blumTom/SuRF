@@ -2,6 +2,7 @@
 #define LOUDSDENSE_H_
 
 #include <string>
+#include <algorithm>
 
 #include "config.hpp"
 #include "rank.hpp"
@@ -48,6 +49,8 @@ namespace surf {
             std::string getKey() const;
 
             int getSuffix(word_t *suffix) const;
+
+            uint64_t getValue() const;
 
             std::string getKeyWithSuffix(unsigned *bitlen) const;
 
@@ -129,6 +132,11 @@ namespace surf {
 
         uint64_t getValue(level_t level, position_t pos) const {
             assert(values_.size() > level);
+            int diff = 0;
+            for (int i=0;i<level; i++) {
+                diff += values_[i].size();
+            }
+            pos -= diff;
             assert(values_[level].size() > pos);
             return values_[level][pos];
         }
@@ -233,11 +241,8 @@ namespace surf {
             if (level >= key.size()) { //if run out of searchKey bytes
                 if (prefixkey_indicator_bits_->readBit(node_num)) { //if the prefix is also a key
                     if (suffixes_->checkEquality(getSuffixPos(pos, true), key, level + 1)) {
-                        position_t posInLevel = getSuffixPos(pos, false) + 1;
-                        for (int i=0;i<level; i++) {
-                            posInLevel -= values_[i].size();
-                        }
-                        return values_[level][posInLevel];
+                        position_t posInLevel = getSuffixPos(pos, true);
+                        return getValue(level,posInLevel);
                     } else {
                         return std::nullopt;
                     }
@@ -252,18 +257,15 @@ namespace surf {
             if (!label_bitmaps_->readBit(pos)) { //if key byte does not exist
                 return std::nullopt;
             }
-
             if (!child_indicator_bitmaps_->readBit(pos)) { //if trie branch terminates
                 if (suffixes_->checkEquality(getSuffixPos(pos, false), key, level + 1)) {
-                    position_t posInLevel = getSuffixPos(pos, false) + 1;
-                    for (int i=0;i<level; i++) {
-                        posInLevel -= values_[i].size();
-                    }
-                    return values_[level][posInLevel];
+                    position_t posInLevel = getSuffixPos(pos, false);
+                    return getValue(level,posInLevel);
                 } else {
                     return std::nullopt;
                 }
             }
+
             node_num = getChildNodeNum(pos);
         }
         //search will continue in LoudsSparse
@@ -423,6 +425,14 @@ namespace surf {
             return trie_->suffixes_->getRealSuffixLen();
         }
         *suffix = 0;
+        return 0;
+    }
+
+    uint64_t LoudsDense::Iter::getValue() const {
+        if (isComplete()) {
+            position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1], is_at_prefix_key_);
+            return trie_->getValue(key_len_ - 1,suffix_pos);
+        }
         return 0;
     }
 
