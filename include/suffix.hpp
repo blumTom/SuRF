@@ -210,11 +210,6 @@ namespace surf {
         if (idx * getSuffixLen() >= num_bits_)
             return false;
 
-        /*std::vector<label_t> key;
-        for (int i=0; i<keyStr.length(); i++) {
-            key.emplace_back(keyStr[i]);
-        }*/
-
         word_t stored_suffix = read(idx);
         if (type_ == kReal) {
             // if no suffix info for the stored key
@@ -253,11 +248,6 @@ namespace surf {
                                  const std::vector<label_t> &key, const level_t level) const {
         if ((idx * getSuffixLen() >= num_bits_) || (type_ == kNone) || (type_ == kHash))
             return kCouldBePositive;
-
-        /*std::vector<label_t> key;
-        for (int i=0; i<keyStr.length(); i++) {
-            key.emplace_back(keyStr[i]);
-        }*/
 
         word_t stored_suffix = read(idx);
         word_t querying_suffix = constructRealSuffix(key, level, real_suffix_len_);
