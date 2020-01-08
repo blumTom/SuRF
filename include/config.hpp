@@ -77,7 +77,7 @@ namespace surf {
 
     std::vector<label_t> uint32ToByteVector(const uint32_t &word) {
         std::vector<label_t> result;
-        for (int i=0; i<4; i++) {
+        for (int i=3; i>=0; i--) {
             uint32_t temp = word;
             temp = temp << ((3-i) * 8);
             temp = temp >> (3*8);
@@ -88,7 +88,7 @@ namespace surf {
 
     std::vector<label_t> uint64ToByteVector(const uint64_t &word) {
         std::vector<label_t> result;
-        for (int i=0; i<8; i++) {
+        for (int i=7; i>=0; i--) {
             uint64_t temp = word;
             temp = temp << ((7-i) * 8);
             temp = temp >> (7*8);
