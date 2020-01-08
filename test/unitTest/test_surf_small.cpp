@@ -38,11 +38,11 @@ namespace surf {
             keys.push_back(std::string("try"));
 
             SuRF *surf = new SuRF(keys, kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
-            bool exist = surf->lookupRange(std::string("top"), false, std::string("toyy"), false);
+            bool exist = surf->lookupRange(std::string("top"), false, std::string("toyy"), false).size() > 0;
             ASSERT_TRUE(exist);
-            exist = surf->lookupRange(std::string("toq"), false, std::string("toyy"), false);
+            exist = surf->lookupRange(std::string("toq"), false, std::string("toyy"), false).size() > 0;
             ASSERT_TRUE(exist);
-            exist = surf->lookupRange(std::string("trie"), false, std::string("tripp"), false);
+            exist = surf->lookupRange(std::string("trie"), false, std::string("tripp"), false).size() > 0;
             ASSERT_TRUE(exist);
 
             SuRF::Iter iter = surf->moveToKeyGreaterThan(std::string("t"), true);
