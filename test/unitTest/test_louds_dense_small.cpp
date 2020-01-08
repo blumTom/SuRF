@@ -25,30 +25,22 @@ namespace surf {
         };
 
         TEST_F (SuRFSmallTest, ExampleInPaperTest) {
-            std::vector<std::string> keys;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keys;
 
-            keys.push_back(std::string("f"));
-            keys.push_back(std::string("far"));
-            keys.push_back(std::string("fas"));
-            keys.push_back(std::string("fast"));
-            keys.push_back(std::string("fat"));
-            keys.push_back(std::string("s"));
-            keys.push_back(std::string("top"));
-            keys.push_back(std::string("toy"));
-            keys.push_back(std::string("trie"));
-            keys.push_back(std::string("trip"));
-            keys.push_back(std::string("try"));
+            keys.push_back({stringToByteVector(std::string("f")),0});
+            keys.push_back({stringToByteVector(std::string("far")),1});
+            keys.push_back({stringToByteVector(std::string("fas")),2});
+            keys.push_back({stringToByteVector(std::string("fast")),3});
+            keys.push_back({stringToByteVector(std::string("fat")),4});
+            keys.push_back({stringToByteVector(std::string("s")),5});
+            keys.push_back({stringToByteVector(std::string("top")),6});
+            keys.push_back({stringToByteVector(std::string("toy")),7});
+            keys.push_back({stringToByteVector(std::string("trie")),8});
+            keys.push_back({stringToByteVector(std::string("trip")),9});
+            keys.push_back({stringToByteVector(std::string("try")),10});
 
             SuRFBuilder *builder = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
-            std::vector< std::vector<label_t>> keysV;
-            for (const std::string &keyStr : keys) {
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                keysV.emplace_back(key);
-            }
-            builder->build(keysV);
+            builder->build(keys);
             LoudsDense *louds_dense = new LoudsDense(builder);
             LoudsDense::Iter iter(louds_dense);
 
