@@ -117,18 +117,6 @@ namespace surf {
         }
 
     private:
-        static bool isSameKey(const std::string &a, const std::string &b) {
-            return a.compare(b) == 0;
-        }
-
-        static bool isSameKey(const std::vector<label_t> &a, const std::vector<label_t> &b, position_t limit) {
-            if (a.size() < limit || b.size() < limit) return false;
-            for (int i=0; i<limit && i<a.size(); i++) {
-                if (a[i] != b[i]) return false;
-            }
-            return true;
-        }
-
         // Fill in the LOUDS-Sparse vectors through a single scan
         // of the sorted key list.
         void buildSparse(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys);
