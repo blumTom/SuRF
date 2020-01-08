@@ -16,7 +16,7 @@ namespace surf {
 
         static const std::string kFilePath = "../../../test/words.txt";
         static const int kTestSize = 234369;
-        static std::vector<std::string> words;
+        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class RankUnitTest : public ::testing::Test {
         public:
@@ -56,15 +56,8 @@ namespace surf {
         };
 
         void RankUnitTest::setupWordsTest() {
-            std::vector< std::vector<label_t>> keys;
-            for (const std::string &keyStr : words) {
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                keys.emplace_back(key);
-            }
-            builder_->build(keys);
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keys;
+            builder_->build(words);
             for (level_t level = 0; level < builder_->getTreeHeight(); level++)
                 num_items_per_level_.push_back(builder_->getLabels()[level].size());
             for (level_t level = 0; level < num_items_per_level_.size(); level++)
@@ -157,11 +150,15 @@ namespace surf {
 
         void loadWordList() {
             std::ifstream infile(kFilePath);
-            std::string key;
+            std::string keyStr;
             int count = 0;
             while (infile.good() && count < kTestSize) {
-                infile >> key;
-                words.push_back(key);
+                infile >> keyStr;
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                words.push_back({key,count});
                 count++;
             }
         }
