@@ -14,8 +14,8 @@ namespace surf {
     namespace surftest {
 
         static const std::string kFilePath = "../../../test/words.txt";
-        static const int kWordTestSize = 234369;
-        static const int kIntTestBound = 1000001;
+        static const int kWordTestSize = 1000;
+        static const int kIntTestBound = 1001;
         static const uint64_t kIntTestSkip = 10;
         static const int kNumSuffixType = 4;
         static const SuffixType kSuffixTypeList[kNumSuffixType] = {kNone, kHash, kReal, kMixed};
@@ -537,7 +537,6 @@ namespace surf {
                     ASSERT_TRUE(exist);
                     exist = surf_->lookupRange(words[words.size() - 1], false, std::string("zzzzzzzz"), false).size() > 0;
                     ASSERT_TRUE(exist);
-
                 }
             }
         }
