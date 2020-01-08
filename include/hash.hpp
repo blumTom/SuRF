@@ -8,17 +8,9 @@ namespace surf {
 //******************************************************
 //HASH FUNCTION FROM LEVELDB
 //******************************************************
-    inline uint32_t DecodeFixed32(const char *ptr) {
-        uint32_t result;
-        memcpy(&result, ptr, sizeof(result));  // gcc optimizes this to a plain load
-        return result;
-    }
-
     inline uint32_t DecodeFixed32(const std::vector<label_t>& data,size_t position) {
         uint32_t result;
-        for (int i=0; i<4; i++) {
-            memcpy(((char *)&result) + i, &data[position + i], 1);  // gcc optimizes this to a plain load
-        }
+        memcpy(((char *)&result), &data[position], sizeof(result));
         return result;
     }
 
