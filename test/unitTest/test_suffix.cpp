@@ -16,7 +16,7 @@ namespace surf {
 
         static const std::string kFilePath = "../../../test/words.txt";
         static const int kTestSize = 234369;
-        static std::vector<std::string> words;
+        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class SuffixUnitTest : public ::testing::Test {
         public:
@@ -38,13 +38,13 @@ namespace surf {
 
             SuRFBuilder *builder_;
             BitvectorSuffix *suffixes_;
-            std::vector<std::vector<std::string> > words_by_suffix_start_level_;
+            std::vector<std::vector<std::pair<std::vector<label_t>,uint64_t>>> words_by_suffix_start_level_;
             char *data_;
         };
 
-        static int getCommonPrefixLen(const std::string &a, const std::string &b) {
+        static int getCommonPrefixLen(const std::vector<label_t> &a, const std::vector<label_t> &b) {
             int len = 0;
-            while ((len < (int) a.length()) && (len < (int) b.length()) && (a[len] == b[len]))
+            while ((len < (int) a.size()) && (len < (int) b.size()) && (a[len] == b[len]))
                 len++;
             return len;
         }
@@ -60,16 +60,16 @@ namespace surf {
             int commonPrefixLen = 0;
             for (unsigned i = 0; i < words.size(); i++) {
                 if (i == 0) {
-                    commonPrefixLen = getCommonPrefixLen(words[i], words[i + 1]);
+                    commonPrefixLen = getCommonPrefixLen(words[i].first, words[i + 1].first);
                 } else if (i == words.size() - 1) {
-                    commonPrefixLen = getCommonPrefixLen(words[i - 1], words[i]);
+                    commonPrefixLen = getCommonPrefixLen(words[i - 1].first, words[i].first);
                 } else {
-                    commonPrefixLen = getMax(getCommonPrefixLen(words[i - 1], words[i]),
-                                             getCommonPrefixLen(words[i], words[i + 1]));
+                    commonPrefixLen = getMax(getCommonPrefixLen(words[i - 1].first, words[i].first),
+                                             getCommonPrefixLen(words[i].first, words[i + 1].first));
                 }
 
                 while (words_by_suffix_start_level_.size() < (unsigned) (commonPrefixLen + 1))
-                    words_by_suffix_start_level_.push_back(std::vector<std::string>());
+                    words_by_suffix_start_level_.push_back(std::vector<std::pair<std::vector<label_t>,uint64_t>>());
 
                 words_by_suffix_start_level_[commonPrefixLen].push_back(words[i]);
             }
@@ -96,7 +96,7 @@ namespace surf {
                 for (unsigned k = 0; k < words_by_suffix_start_level_[level].size(); k++) {
                     if (level == 1 && k == 32) {
                         bool is_equal = suffixes_->checkEquality(suffix_idx,
-                                                                 stringToByteVector(words_by_suffix_start_level_[level][k]),
+                                                                 words_by_suffix_start_level_[level][k].first,
                                                                  (level + 1));
                         ASSERT_TRUE(is_equal);
                     }
@@ -111,13 +111,8 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 for (unsigned j = 0; j < words.size(); j++) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<words[j].length(); i++) {
-                        key.emplace_back(words[j][i]);
-                    }
-
-                    word_t suffix = BitvectorSuffix::constructSuffix(kReal, key, 0, level, suffix_len);
-                    if (words[j].length() < level || ((words[j].length() - level) * 8) < suffix_len) {
+                    word_t suffix = BitvectorSuffix::constructSuffix(kReal, words[j].first, 0, level, suffix_len);
+                    if (words[j].first.size() < level || ((words[j].first.size() - level) * 8) < suffix_len) {
                         ASSERT_EQ(0, suffix);
                         continue;
                     }
@@ -127,8 +122,8 @@ namespace surf {
                         uint8_t byte_mask = 0x80;
                         byte_mask >>= byte_offset;
                         bool expected_suffix_bit = false;
-                        if (level + byte_id < words[j].size())
-                            expected_suffix_bit = (bool) (words[j][level + byte_id] & byte_mask);
+                        if (level + byte_id < words[j].first.size())
+                            expected_suffix_bit = (bool) (words[j].first[level + byte_id] & byte_mask);
 
                         word_t word_mask = kMsbMask;
                         word_mask >>= (kWordSize - suffix_len + bitpos);
@@ -146,19 +141,14 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 for (unsigned j = 0; j < words.size(); j++) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<words[j].length(); i++) {
-                        key.emplace_back(words[j][i]);
-                    }
-
-                    word_t suffix = BitvectorSuffix::constructSuffix(kMixed, key, suffix_len,
+                    word_t suffix = BitvectorSuffix::constructSuffix(kMixed, words[j].first, suffix_len,
                                                                      level, suffix_len);
                     word_t hash_suffix = BitvectorSuffix::extractHashSuffix(suffix, suffix_len);
-                    word_t expected_hash_suffix = BitvectorSuffix::constructHashSuffix(key, suffix_len);
+                    word_t expected_hash_suffix = BitvectorSuffix::constructHashSuffix(words[j].first, suffix_len);
                     ASSERT_EQ(expected_hash_suffix, hash_suffix);
 
                     word_t real_suffix = BitvectorSuffix::extractRealSuffix(suffix, suffix_len);
-                    if (words[j].length() < level || ((words[j].length() - level) * 8) < suffix_len) {
+                    if (words[j].first.size() < level || ((words[j].first.size() - level) * 8) < suffix_len) {
                         ASSERT_EQ(0, real_suffix);
                         continue;
                     }
@@ -168,8 +158,8 @@ namespace surf {
                         uint8_t byte_mask = 0x80;
                         byte_mask >>= byte_offset;
                         bool expected_suffix_bit = false;
-                        if (level + byte_id < words[j].size())
-                            expected_suffix_bit = (bool) (words[j][level + byte_id] & byte_mask);
+                        if (level + byte_id < words[j].first.size())
+                            expected_suffix_bit = (bool) (words[j].first[level + byte_id] & byte_mask);
 
                         word_t word_mask = kMsbMask;
                         word_mask >>= (kWordSize - suffix_len + bitpos);
@@ -198,15 +188,7 @@ namespace surf {
                     else
                         builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio,
                                                    suffix_type, suffix_len, suffix_len);
-                    std::vector< std::vector<label_t>> keys;
-                    for (const std::string &keyStr : words) {
-                        std::vector<label_t> key;
-                        for (int i=0; i<keyStr.length(); i++) {
-                            key.emplace_back(keyStr[i]);
-                        }
-                        keys.emplace_back(key);
-                    }
-                    builder_->build(keys);
+                    builder_->build(words);
 
                     level_t height = builder_->getLabels().size();
                     std::vector<position_t> num_suffix_bits_per_level;
@@ -252,15 +234,7 @@ namespace surf {
                     else
                         builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio,
                                                    suffix_type, suffix_len, suffix_len);
-                    std::vector< std::vector<label_t>> keys;
-                    for (const std::string &keyStr : words) {
-                        std::vector<label_t> key;
-                        for (int i=0; i<keyStr.length(); i++) {
-                            key.emplace_back(keyStr[i]);
-                        }
-                        keys.emplace_back(key);
-                    }
-                    builder_->build(keys);
+                    builder_->build(words);
 
                     level_t height = builder_->getLabels().size();
                     std::vector<position_t> num_suffix_bits_per_level;
@@ -290,11 +264,15 @@ namespace surf {
 
         void loadWordList() {
             std::ifstream infile(kFilePath);
-            std::string key;
+            std::string keyStr;
             int count = 0;
             while (infile.good() && count < kTestSize) {
-                infile >> key;
-                words.push_back(key);
+                infile >> keyStr;
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                words.push_back({key,count});
                 count++;
             }
         }
