@@ -16,8 +16,8 @@ namespace surf {
         static const std::string kFilePath = "../../../test/words.txt";
         static const int kTestSize = 234369;
         static const int kIntTestSize = 1000000;
-        static std::vector<std::string> words;
-        static std::vector<std::string> words_dup;
+        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
+        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words_dup;
 
         class SuRFBuilderUnitTest : public ::testing::Test {
         public:
@@ -27,16 +27,16 @@ namespace surf {
                 truncateSuffixes(ints_, ints_trunc_);
             }
 
-            void truncateSuffixes(const std::vector<std::string> &keys,
-                                  std::vector<std::string> &keys_trunc);
+            void truncateSuffixes(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+                                  std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc);
 
-            bool DoesPrefixMatchInTrunc(const std::vector<std::string> &keys_trunc,
+            bool DoesPrefixMatchInTrunc(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc,
                                         int i, int j, int len);
 
             void fillinInts();
 
-            void testSparse(const std::vector<std::string> &keys,
-                            const std::vector<std::string> &keys_trunc);
+            void testSparse(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+                            const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc);
 
             void testDense();
 
@@ -46,14 +46,14 @@ namespace surf {
             void printSparseNode(level_t level, position_t pos);
 
             SuRFBuilder *builder_;
-            std::vector<std::string> words_trunc_;
-            std::vector<std::string> ints_;
-            std::vector<std::string> ints_trunc_;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_trunc_;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_trunc_;
         };
 
-        static int getCommonPrefixLen(const std::string &a, const std::string &b) {
+        static int getCommonPrefixLen(const std::vector<label_t> &a, const std::vector<label_t> &b) {
             int len = 0;
-            while ((len < (int) a.length()) && (len < (int) b.length()) && (a[len] == b[len]))
+            while ((len < (int) a.size()) && (len < (int) b.size()) && (a[len] == b[len]))
                 len++;
             return len;
         }
@@ -64,33 +64,37 @@ namespace surf {
             return a;
         }
 
-        void SuRFBuilderUnitTest::truncateSuffixes(const std::vector<std::string> &keys,
-                                                   std::vector<std::string> &keys_trunc) {
+        void SuRFBuilderUnitTest::truncateSuffixes(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+                                                   std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc) {
             assert(keys.size() > 1);
 
             int commonPrefixLen = 0;
             for (unsigned i = 0; i < keys.size(); i++) {
                 if (i == 0) {
-                    commonPrefixLen = getCommonPrefixLen(keys[i], keys[i + 1]);
+                    commonPrefixLen = getCommonPrefixLen(keys[i].first, keys[i + 1].first);
                 } else if (i == keys.size() - 1) {
-                    commonPrefixLen = getCommonPrefixLen(keys[i - 1], keys[i]);
+                    commonPrefixLen = getCommonPrefixLen(keys[i - 1].first, keys[i].first);
                 } else {
-                    commonPrefixLen = getMax(getCommonPrefixLen(keys[i - 1], keys[i]),
-                                             getCommonPrefixLen(keys[i], keys[i + 1]));
+                    commonPrefixLen = getMax(getCommonPrefixLen(keys[i - 1].first, keys[i].first),
+                                             getCommonPrefixLen(keys[i].first, keys[i + 1].first));
                 }
 
-                if (commonPrefixLen < (int) keys[i].length()) {
-                    keys_trunc.push_back(keys[i].substr(0, commonPrefixLen + 1));
+                if (commonPrefixLen < (int) keys[i].first.size()) {
+                    std::vector<label_t> subVector;
+                    for (int j=0; j<commonPrefixLen + 1; j++) {
+                        subVector.emplace_back(keys[i].first[j]);
+                    }
+                    keys_trunc.push_back({subVector,keys[i].second});
                 } else {
                     keys_trunc.push_back(keys[i]);
-                    keys_trunc[i] += (char) kTerminator;
+                    keys_trunc[i].first.emplace_back(kTerminator);
                 }
             }
         }
 
         void SuRFBuilderUnitTest::fillinInts() {
             for (uint64_t i = 0; i < kIntTestSize; i += 10) {
-                ints_.push_back(uint64ToString(i));
+                ints_.push_back({uint64ToByteVector(i),i});
             }
         }
 
@@ -189,32 +193,32 @@ namespace surf {
         }
 
         bool
-        SuRFBuilderUnitTest::DoesPrefixMatchInTrunc(const std::vector<std::string> &keys_trunc, int i, int j, int len) {
+        SuRFBuilderUnitTest::DoesPrefixMatchInTrunc(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc, int i, int j, int len) {
             if (i < 0 || i >= (int) keys_trunc.size()) return false;
             if (j < 0 || j >= (int) keys_trunc.size()) return false;
             if (len <= 0) return true;
-            if ((int) keys_trunc[i].length() < len) return false;
-            if ((int) keys_trunc[j].length() < len) return false;
-            if (keys_trunc[i].substr(0, len).compare(keys_trunc[j].substr(0, len)) == 0)
-                return true;
+            if ((int) keys_trunc[i].first.size() < len) return false;
+            if ((int) keys_trunc[j].first.size() < len) return false;
+
+            if (isSameKey(keys_trunc[i].first,keys_trunc[j].first,len)) return true;
             return false;
         }
 
-        void SuRFBuilderUnitTest::testSparse(const std::vector<std::string> &keys,
-                                             const std::vector<std::string> &keys_trunc) {
+        void SuRFBuilderUnitTest::testSparse(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+                                             const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc) {
             for (level_t level = 0; level < builder_->getTreeHeight(); level++) {
                 position_t pos = 0;
                 pos--;
                 position_t suffix_bitpos = 0;
                 for (int i = 0; i < (int) keys_trunc.size(); i++) {
-                    if (level >= keys_trunc[i].length())
+                    if (level >= keys_trunc[i].first.size())
                         continue;
                     if (DoesPrefixMatchInTrunc(keys_trunc, i - 1, i, level + 1))
                         continue;
                     pos++;
 
                     // label test
-                    label_t label = (label_t) keys_trunc[i][level];
+                    label_t label = (label_t) keys_trunc[i].first[level];
                     bool exist_in_node = (builder_->getLabels()[level][pos] == label);
                     ASSERT_TRUE(exist_in_node);
 
@@ -236,15 +240,15 @@ namespace surf {
                     // suffix test
                     if (!has_child) {
                         position_t suffix_len = builder_->getSuffixLen();
-                        if (((keys[i].length() - level - 1) * 8) >= suffix_len) {
+                        if (((keys[i].first.size() - level - 1) * 8) >= suffix_len) {
                             for (position_t bitpos = 0; bitpos < suffix_len; bitpos++) {
                                 position_t byte_id = bitpos / 8;
                                 position_t byte_offset = bitpos % 8;
                                 uint8_t byte_mask = 0x80;
                                 byte_mask >>= byte_offset;
                                 bool expected_suffix_bit = false;
-                                if (level + 1 + byte_id < keys[i].size())
-                                    expected_suffix_bit = (bool) (keys[i][level + 1 + byte_id] & byte_mask);
+                                if (level + 1 + byte_id < keys[i].first.size())
+                                    expected_suffix_bit = (bool) (keys[i].first[level + 1 + byte_id] & byte_mask);
                                 bool stored_suffix_bit = SuRFBuilder::readBit(builder_->getSuffixes()[level],
                                                                               suffix_bitpos);
                                 ASSERT_EQ(expected_suffix_bit, stored_suffix_bit);
@@ -340,15 +344,7 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                std::vector< std::vector<label_t>> keys;
-                for (const std::string &keyStr : words) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<keyStr.length(); i++) {
-                        key.emplace_back(keyStr[i]);
-                    }
-                    keys.emplace_back(key);
-                }
-                builder_->build(keys);
+                builder_->build(words);
                 testSparse(words, words_trunc_);
                 delete builder_;
             }
@@ -361,15 +357,7 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                std::vector< std::vector<label_t>> keys;
-                for (const std::string &keyStr : words_dup) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<keyStr.length(); i++) {
-                        key.emplace_back(keyStr[i]);
-                    }
-                    keys.emplace_back(key);
-                }
-                builder_->build(keys);
+                builder_->build(words_dup);
                 testSparse(words, words_trunc_);
                 delete builder_;
             }
@@ -382,15 +370,7 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                std::vector< std::vector<label_t>> keys;
-                for (const std::string &keyStr : ints_) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<keyStr.length(); i++) {
-                        key.emplace_back(keyStr[i]);
-                    }
-                    keys.emplace_back(key);
-                }
-                builder_->build(keys);
+                builder_->build(ints_);
                 testSparse(ints_, ints_trunc_);
                 delete builder_;
             }
@@ -403,15 +383,7 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                std::vector< std::vector<label_t>> keys;
-                for (const std::string &keyStr : words) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<keyStr.length(); i++) {
-                        key.emplace_back(keyStr[i]);
-                    }
-                    keys.emplace_back(key);
-                }
-                builder_->build(keys);
+                builder_->build(words);
                 testDense();
                 delete builder_;
             }
@@ -424,15 +396,7 @@ namespace surf {
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                std::vector< std::vector<label_t>> keys;
-                for (const std::string &keyStr : ints_) {
-                    std::vector<label_t> key;
-                    for (int i=0; i<keyStr.length(); i++) {
-                        key.emplace_back(keyStr[i]);
-                    }
-                    keys.emplace_back(key);
-                }
-                builder_->build(keys);
+                builder_->build(ints_);
                 testDense();
                 delete builder_;
             }
@@ -440,13 +404,17 @@ namespace surf {
 
         void loadWordList() {
             std::ifstream infile(kFilePath);
-            std::string key;
+            std::string keyStr;
             int count = 0;
             while (infile.good() && count < kTestSize) {
-                infile >> key;
-                words.push_back(key);
-                words_dup.push_back(key);
-                words_dup.push_back(key);
+                infile >> keyStr;
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                words.push_back({key,count});
+                words_dup.push_back({key,2 * count});
+                words_dup.push_back({key,2 * count + 1});
                 count++;
             }
         }

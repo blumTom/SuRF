@@ -97,6 +97,15 @@ namespace surf {
         return result;
     }
 
+    bool isSameKey(const std::vector<label_t> &a, const std::vector<label_t> &b, position_t limit) {
+        if (a.size() < limit || b.size() < limit) return false;
+
+        for (int i=0; i<limit; i++) {
+            if (a[i] != b[i]) return false;
+        }
+        return true;
+    }
+
 } // namespace surf
 
 #endif // CONFIG_H_
