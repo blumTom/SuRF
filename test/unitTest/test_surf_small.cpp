@@ -23,19 +23,19 @@ namespace surf {
         };
 
         TEST_F (SuRFSmallTest, ExampleInPaperTest) {
-            std::vector<std::string> keys;
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> keys;
 
-            keys.push_back(std::string("f"));
-            keys.push_back(std::string("far"));
-            keys.push_back(std::string("fas"));
-            keys.push_back(std::string("fast"));
-            keys.push_back(std::string("fat"));
-            keys.push_back(std::string("s"));
-            keys.push_back(std::string("top"));
-            keys.push_back(std::string("toy"));
-            keys.push_back(std::string("trie"));
-            keys.push_back(std::string("trip"));
-            keys.push_back(std::string("try"));
+            keys.push_back({stringToByteVector(std::string("f")),0});
+            keys.push_back({stringToByteVector(std::string("far")),1});
+            keys.push_back({stringToByteVector(std::string("fas")),2});
+            keys.push_back({stringToByteVector(std::string("fast")),3});
+            keys.push_back({stringToByteVector(std::string("fat")),4});
+            keys.push_back({stringToByteVector(std::string("s")),5});
+            keys.push_back({stringToByteVector(std::string("top")),6});
+            keys.push_back({stringToByteVector(std::string("toy")),7});
+            keys.push_back({stringToByteVector(std::string("trie")),8});
+            keys.push_back({stringToByteVector(std::string("trip")),9});
+            keys.push_back({stringToByteVector(std::string("try")),10});
 
             SuRF *surf = new SuRF(keys, kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
             bool exist = surf->lookupRange(std::string("top"), false, std::string("toyy"), false).size() > 0;
