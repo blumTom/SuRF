@@ -163,7 +163,7 @@ namespace surf {
             }
         }
 
-        TEST_F (SparseUnitTest, serializeTest) {
+        /*TEST_F (SparseUnitTest, serializeTest) {
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
@@ -175,7 +175,7 @@ namespace surf {
                     delete builder_;
                 }
             }
-        }
+        }*/
 
         TEST_F (SparseUnitTest, lookupIntTest) {
             newBuilder(kReal, 8);
