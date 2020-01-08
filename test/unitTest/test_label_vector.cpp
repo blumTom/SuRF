@@ -16,7 +16,7 @@ namespace surf {
 
         static const std::string kFilePath = "../../../test/words.txt";
         static const int kTestSize = 234369;
-        static std::vector<std::string> words;
+        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class LabelVectorUnitTest : public ::testing::Test {
         public:
@@ -46,15 +46,7 @@ namespace surf {
         };
 
         void LabelVectorUnitTest::setupWordsTest() {
-            std::vector< std::vector<label_t>> keys;
-            for (const std::string &keyStr : words) {
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                keys.emplace_back(key);
-            }
-            builder_->build(keys);
+            builder_->build(words);
             labels_ = new LabelVector(builder_->getLabels());
         }
 
@@ -95,16 +87,16 @@ namespace surf {
                                 continue;
                             // search success
                             search_pos = start_pos;
-                            search_success = labels_->search(test_label, search_pos, search_len);
+                            search_success = labels_->search(test_label, search_pos, search_len).has_value();
                             ASSERT_TRUE(search_success);
                             ASSERT_EQ(i, search_pos);
                         }
                         // search fail
                         search_pos = start_pos;
-                        search_success = labels_->search('\0', search_pos, search_len);
+                        search_success = labels_->search('\0', search_pos, search_len).has_value();
                         ASSERT_FALSE(search_success);
                         search_pos = start_pos;
-                        search_success = labels_->search('\255', search_pos, search_len);
+                        search_success = labels_->search('\255', search_pos, search_len).has_value();
                         ASSERT_FALSE(search_success);
 
                         start_pos += search_len;
@@ -144,45 +136,45 @@ namespace surf {
                             // binary search success
                             binary_search_pos = start_pos;
                             binary_search_success = labels_->binarySearch(labels_->read(i), binary_search_pos,
-                                                                          search_len);
+                                                                          search_len).has_value();
                             ASSERT_TRUE(binary_search_success);
                             ASSERT_EQ(i, binary_search_pos);
 
                             // simd search success
                             simd_search_pos = start_pos;
-                            simd_search_success = labels_->simdSearch(labels_->read(i), simd_search_pos, search_len);
+                            simd_search_success = labels_->simdSearch(labels_->read(i), simd_search_pos, search_len).has_value();
                             ASSERT_TRUE(simd_search_success);
                             ASSERT_EQ(i, simd_search_pos);
 
                             // linear search success
                             linear_search_pos = start_pos;
                             linear_search_success = labels_->linearSearch(labels_->read(i), linear_search_pos,
-                                                                          search_len);
+                                                                          search_len).has_value();
                             ASSERT_TRUE(linear_search_success);
                             ASSERT_EQ(i, linear_search_pos);
                         }
                         // binary search fail
                         binary_search_pos = start_pos;
-                        binary_search_success = labels_->binarySearch('\0', binary_search_pos, search_len);
+                        binary_search_success = labels_->binarySearch('\0', binary_search_pos, search_len).has_value();
                         ASSERT_FALSE(binary_search_success);
                         binary_search_pos = start_pos;
-                        binary_search_success = labels_->binarySearch('\255', binary_search_pos, search_len);
+                        binary_search_success = labels_->binarySearch('\255', binary_search_pos, search_len).has_value();
                         ASSERT_FALSE(binary_search_success);
 
                         // simd search fail
                         simd_search_pos = start_pos;
-                        simd_search_success = labels_->simdSearch('\0', simd_search_pos, search_len);
+                        simd_search_success = labels_->simdSearch('\0', simd_search_pos, search_len).has_value();
                         ASSERT_FALSE(simd_search_success);
                         simd_search_pos = start_pos;
-                        simd_search_success = labels_->simdSearch('\255', simd_search_pos, search_len);
+                        simd_search_success = labels_->simdSearch('\255', simd_search_pos, search_len).has_value();
                         ASSERT_FALSE(simd_search_success);
 
                         // linear search fail
                         linear_search_pos = start_pos;
-                        linear_search_success = labels_->linearSearch('\0', linear_search_pos, search_len);
+                        linear_search_success = labels_->linearSearch('\0', linear_search_pos, search_len).has_value();
                         ASSERT_FALSE(linear_search_success);
                         linear_search_pos = start_pos;
-                        linear_search_success = labels_->linearSearch('\255', linear_search_pos, search_len);
+                        linear_search_success = labels_->linearSearch('\255', linear_search_pos, search_len).has_value();
                         ASSERT_FALSE(linear_search_success);
 
                         start_pos += search_len;
@@ -235,21 +227,21 @@ namespace surf {
                                 label_t next_label = labels_->read(i + 1);
                                 // search existing label
                                 search_pos = start_pos;
-                                search_success = labels_->searchGreaterThan(cur_label, search_pos, search_len);
+                                search_success = labels_->searchGreaterThan(cur_label, search_pos, search_len).has_value();
                                 ASSERT_TRUE(search_success);
                                 ASSERT_EQ(i + 1, search_pos);
 
                                 // search midpoint (could be non-existing label)
                                 label_t test_label = cur_label + ((next_label - cur_label) / 2);
                                 search_pos = start_pos;
-                                search_success = labels_->searchGreaterThan(test_label, search_pos, search_len);
+                                search_success = labels_->searchGreaterThan(test_label, search_pos, search_len).has_value();
                                 ASSERT_TRUE(search_success);
                                 ASSERT_EQ(i + 1, search_pos);
                             } else {
                                 // search out-of-bound label
                                 search_pos = start_pos;
                                 search_success = labels_->searchGreaterThan(labels_->read(start_pos + search_len - 1),
-                                                                            search_pos, search_len);
+                                                                            search_pos, search_len).has_value();
                                 ASSERT_FALSE(search_success);
                                 ASSERT_EQ(start_pos + terminator_offset, search_pos);
                             }
@@ -264,11 +256,15 @@ namespace surf {
 
         void loadWordList() {
             std::ifstream infile(kFilePath);
-            std::string key;
+            std::string keyStr;
             int count = 0;
             while (infile.good() && count < kTestSize) {
-                infile >> key;
-                words.push_back(key);
+                infile >> keyStr;
+                std::vector<label_t> key;
+                for (int i=0; i<keyStr.length(); i++) {
+                    key.emplace_back(keyStr[i]);
+                }
+                words.push_back({key,count});
                 count++;
             }
         }
