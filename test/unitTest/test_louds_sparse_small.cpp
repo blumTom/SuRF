@@ -46,9 +46,9 @@ namespace surf {
 
             louds_sparse->moveToKeyGreaterThan(std::string("to"), true, iter);
             ASSERT_TRUE(iter.isValid());
-            ASSERT_EQ(0, iter.getKey().compare("top"));
+            ASSERT_TRUE(isSameKey(iter.getKey(),stringToByteVector("top"),std::max(iter.getKey().size(),stringToByteVector("top").size())));
             iter++;
-            ASSERT_EQ(0, iter.getKey().compare("toy"));
+            ASSERT_TRUE(isSameKey(iter.getKey(),stringToByteVector("toy"),std::max(iter.getKey().size(),stringToByteVector("toy").size())));
         }
 
     } // namespace surftest

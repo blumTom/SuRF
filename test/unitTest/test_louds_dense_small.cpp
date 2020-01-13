@@ -46,14 +46,14 @@ namespace surf {
 
             louds_dense->moveToKeyGreaterThan(std::string("to"), true, iter);
             ASSERT_TRUE(iter.isValid());
-            ASSERT_EQ(0, iter.getKey().compare("top"));
+            ASSERT_TRUE(isSameKey(iter.getKey(),stringToByteVector("top"),std::max(iter.getKey().size(),stringToByteVector("top").size())));
             iter++;
-            ASSERT_EQ(0, iter.getKey().compare("toy"));
+            ASSERT_TRUE(isSameKey(iter.getKey(),stringToByteVector("toy"),std::max(iter.getKey().size(),stringToByteVector("toy").size())));
 
             iter.clear();
             louds_dense->moveToKeyGreaterThan(std::string("fas"), true, iter);
             ASSERT_TRUE(iter.isValid());
-            ASSERT_EQ(0, iter.getKey().compare("fas"));
+            ASSERT_TRUE(isSameKey(iter.getKey(),stringToByteVector("fas"),std::max(iter.getKey().size(),stringToByteVector("fas").size())));
         }
 
     } // namespace surftest

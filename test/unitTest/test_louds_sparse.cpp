@@ -211,12 +211,12 @@ namespace surf {
                             bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(words[j].first, inclusive, iter);
 
                             ASSERT_TRUE(iter.isValid());
-                            std::string iter_key = iter.getKey();
-                            bool is_prefix = false;
+                            std::vector<label_t> iter_key = iter.getKey();
+                            bool is_prefix;
                             if (could_be_fp)
-                                is_prefix = isSameKey(stringToByteVector(iter_key),words[j].first,iter_key.length());
+                                is_prefix = isSameKey(iter_key,words[j].first,iter_key.size());
                             else
-                                is_prefix = isSameKey(stringToByteVector(iter_key),words[j + 1].first,iter_key.length());
+                                is_prefix = isSameKey(iter_key,words[j + 1].first,iter_key.size());
                             ASSERT_TRUE(is_prefix);
                         }
 
@@ -224,8 +224,8 @@ namespace surf {
                         bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(words[words.size() - 1].first, inclusive,
                                                                                iter);
                         if (could_be_fp) {
-                            std::string iter_key = iter.getKey();
-                            bool is_prefix = isSameKey(stringToByteVector(iter_key),words[words.size() - 1].first,iter_key.length());
+                            std::vector<label_t> iter_key = iter.getKey();
+                            bool is_prefix = isSameKey(iter_key,words[words.size() - 1].first,iter_key.size());
                             ASSERT_TRUE(is_prefix);
                         } else {
                             ASSERT_FALSE(iter.isValid());
@@ -253,16 +253,14 @@ namespace surf {
                     bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(uint64ToString(j), inclusive, iter);
 
                     ASSERT_TRUE(iter.isValid());
-                    std::string iter_key = iter.getKey();
-                    std::string int_key_fp = uint64ToString(j - (j % kIntTestSkip));
-                    std::string int_key_true = uint64ToString(j - (j % kIntTestSkip) + kIntTestSkip);
-                    std::string int_prefix_fp = int_key_fp.substr(0, iter_key.length());
-                    std::string int_prefix_true = int_key_true.substr(0, iter_key.length());
+                    std::vector<label_t> iter_key = iter.getKey();
+                    std::vector<label_t> int_key_fp = uint64ToByteVector(j - (j % kIntTestSkip));
+                    std::vector<label_t> int_key_true = uint64ToByteVector(j - (j % kIntTestSkip) + kIntTestSkip);
                     bool is_prefix = false;
                     if (could_be_fp)
-                        is_prefix = (int_prefix_fp.compare(iter_key) == 0);
+                        is_prefix = isSameKey(iter_key,int_key_fp,iter_key.size());
                     else
-                        is_prefix = (int_prefix_true.compare(iter_key) == 0);
+                        is_prefix = isSameKey(iter_key,int_key_true,iter_key.size());
                     ASSERT_TRUE(is_prefix);
                 }
 
@@ -270,10 +268,9 @@ namespace surf {
                 bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(uint64ToString(kIntTestBound - 1), inclusive,
                                                                        iter);
                 if (could_be_fp) {
-                    std::string iter_key = iter.getKey();
-                    std::string int_key_fp = uint64ToString(kIntTestBound - 1);
-                    std::string int_prefix_fp = int_key_fp.substr(0, iter_key.length());
-                    bool is_prefix = (int_prefix_fp.compare(iter_key) == 0);
+                    std::vector<label_t> iter_key = iter.getKey();
+                    std::vector<label_t> int_key_fp = uint64ToByteVector(kIntTestBound - 1);
+                    bool is_prefix = isSameKey(iter_key,int_key_fp,iter_key.size());
                     ASSERT_TRUE(is_prefix);
                 } else {
                     ASSERT_FALSE(iter.isValid());
@@ -295,8 +292,8 @@ namespace surf {
             for (unsigned i = 1; i < words.size(); i++) {
                 iter++;
                 ASSERT_TRUE(iter.isValid());
-                std::string iter_key = iter.getKey();
-                bool is_prefix = isSameKey(stringToByteVector(iter_key),words[i].first,iter_key.length());
+                std::vector<label_t> iter_key = iter.getKey();
+                bool is_prefix = isSameKey(iter_key,words[i].first,iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
             iter++;
@@ -316,9 +313,8 @@ namespace surf {
             for (uint64_t i = kIntTestSkip; i < kIntTestBound; i += kIntTestSkip) {
                 iter++;
                 ASSERT_TRUE(iter.isValid());
-                std::string iter_key = iter.getKey();
-                std::string int_prefix = uint64ToString(i).substr(0, iter_key.length());
-                bool is_prefix = (int_prefix.compare(iter_key) == 0);
+                std::vector<label_t> iter_key = iter.getKey();
+                bool is_prefix = isSameKey(iter_key,uint64ToByteVector(i),iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
             iter++;
@@ -338,8 +334,8 @@ namespace surf {
             for (int i = words.size() - 2; i >= 0; i--) {
                 iter--;
                 ASSERT_TRUE(iter.isValid());
-                std::string iter_key = iter.getKey();
-                bool is_prefix = isSameKey(stringToByteVector(iter_key),words[i].first,iter_key.length());
+                std::vector<label_t> iter_key = iter.getKey();
+                bool is_prefix = isSameKey(iter_key,words[i].first,iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
             iter--;
@@ -359,9 +355,8 @@ namespace surf {
             for (uint64_t i = kIntTestBound - 1 - kIntTestSkip; i > 0; i -= kIntTestSkip) {
                 iter--;
                 ASSERT_TRUE(iter.isValid());
-                std::string iter_key = iter.getKey();
-                std::string int_prefix = uint64ToString(i).substr(0, iter_key.length());
-                bool is_prefix = (int_prefix.compare(iter_key) == 0);
+                std::vector<label_t> iter_key = iter.getKey();
+                bool is_prefix = isSameKey(iter_key,uint64ToByteVector(i),iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
             iter--;
@@ -379,15 +374,15 @@ namespace surf {
             LoudsSparse::Iter iter(louds_sparse_);
             iter.setToFirstLabelInRoot();
             iter.moveToLeftMostKey();
-            std::string iter_key = iter.getKey();
-            bool is_prefix = isSameKey(stringToByteVector(iter_key),words[0].first,iter_key.length());
+            std::vector<label_t> iter_key = iter.getKey();
+            bool is_prefix = isSameKey(iter_key,words[0].first,iter_key.size());
             ASSERT_TRUE(is_prefix);
 
             iter.clear();
             iter.setToLastLabelInRoot();
             iter.moveToRightMostKey();
             iter_key = iter.getKey();
-            is_prefix = isSameKey(stringToByteVector(iter_key),words[kWordTestSize - 1].first,iter_key.length());
+            is_prefix = isSameKey(iter_key,words[kWordTestSize - 1].first,iter_key.size());
             ASSERT_TRUE(is_prefix);
 
             delete builder_;

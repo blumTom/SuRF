@@ -32,13 +32,13 @@ namespace surf {
 
             int compare(const std::vector<label_t> &key) const;
 
-            std::string getKey() const;
+            std::vector<label_t> getKey() const;
 
             int getSuffix(word_t *suffix) const;
 
             uint64_t getValue() const;
 
-            std::string getKeyWithSuffix(unsigned *bitlen) const;
+            std::vector<label_t> getKeyWithSuffix(unsigned *bitlen) const;
 
             // Returns true if the status of the iterator after the operation is valid
             bool operator++(int);
@@ -75,6 +75,10 @@ namespace surf {
         //------------------------------------------------------------------
         // Input keys must be SORTED
         //------------------------------------------------------------------
+        SuRF(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys) {
+            create(keys, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
+        }
+
         SuRF(const std::vector<std::string> &keys) {
             std::vector<std::pair<std::vector<label_t>,uint64_t>> keyStrs;
 
@@ -109,6 +113,13 @@ namespace surf {
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
+        }
+
+        SuRF(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+             const SuffixType suffix_type,
+             const level_t hash_suffix_len,
+             const level_t real_suffix_len) {
+            create(keys, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
         }
 
         SuRF(const std::vector<std::string> &keys,
@@ -154,6 +165,15 @@ namespace surf {
             }
 
             create(keyStrs, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
+        }
+
+        SuRF(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+             const bool include_dense,
+             const uint32_t sparse_dense_ratio,
+             const SuffixType suffix_type,
+             const level_t hash_suffix_len,
+             const level_t real_suffix_len) {
+            create(keys, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
         }
 
         SuRF(const std::vector<std::string> &keys,
@@ -215,6 +235,8 @@ namespace surf {
                     const SuffixType suffix_type,
                     const level_t hash_suffix_len,
                     const level_t real_suffix_len);
+
+        std::optional<uint64_t> lookupKey(const std::vector<label_t> &key) const;
 
         std::optional<uint64_t> lookupKey(const std::string &key) const;
 
@@ -292,8 +314,6 @@ namespace surf {
         LoudsSparse *louds_sparse_;
         SuRFBuilder *builder_;
         SuRF::Iter iter_;
-
-        std::optional<uint64_t> lookupKey(const std::vector<label_t> &key) const;
     };
 
     void SuRF::create(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
@@ -423,6 +443,7 @@ namespace surf {
 
     std::vector<uint64_t> SuRF::lookupRange(const std::vector<label_t> &left_key, const bool left_inclusive,
                            const std::vector<label_t> &right_key, const bool right_inclusive) {
+
         iter_.clear();
         louds_dense_->moveToKeyGreaterThan(left_key, left_inclusive, iter_.dense_iter_);
         if (!iter_.dense_iter_.isValid()) return std::vector<uint64_t>(0);
@@ -439,9 +460,11 @@ namespace surf {
             }
         }
 
+
         std::vector<uint64_t> resultSet = std::vector<uint64_t>(0);
         for (;iter_.isValid();iter_++) {
             int compare = iter_.compare(right_key);
+
             if (compare == kCouldBePositive ||
                     (right_inclusive && (compare <= 0)) ||
                     (!right_inclusive && (compare < 0))) {
@@ -513,12 +536,17 @@ namespace surf {
         return sparse_iter_.compare(key);
     }
 
-    std::string SuRF::Iter::getKey() const {
+    std::vector<label_t> SuRF::Iter::getKey() const {
         if (!isValid())
-            return std::string();
+            return std::vector<label_t>(0);
         if (dense_iter_.isComplete())
             return dense_iter_.getKey();
-        return dense_iter_.getKey() + sparse_iter_.getKey();
+        std::vector<label_t> result = dense_iter_.getKey();
+        std::vector<label_t> sparseKey = sparse_iter_.getKey();
+        for (int i=0; i<sparseKey.size(); i++) {
+            result.emplace_back(sparseKey[i]);
+        }
+        return result;
     }
 
     int SuRF::Iter::getSuffix(word_t *suffix) const {
@@ -537,15 +565,21 @@ namespace surf {
         return sparse_iter_.getValue();
     }
 
-    std::string SuRF::Iter::getKeyWithSuffix(unsigned *bitlen) const {
+    std::vector<label_t> SuRF::Iter::getKeyWithSuffix(unsigned *bitlen) const {
         *bitlen = 0;
         if (!isValid())
-            return std::string();
+            return stringToByteVector(std::string());
         if (dense_iter_.isComplete())
             return dense_iter_.getKeyWithSuffix(bitlen);
-        return dense_iter_.getKeyWithSuffix(bitlen) + sparse_iter_.getKeyWithSuffix(bitlen);
-    }
 
+        std::vector<label_t> result = dense_iter_.getKeyWithSuffix(bitlen);
+        std::vector<label_t> sparseKey = sparse_iter_.getKeyWithSuffix(bitlen);
+        for (int i=0; i<sparseKey.size(); i++) {
+            result.emplace_back(sparseKey[i]);
+        }
+        return result;
+    }
+    
     void SuRF::Iter::passToSparse() {
         sparse_iter_.setStartNodeNum(dense_iter_.getSendOutNodeNum());
     }

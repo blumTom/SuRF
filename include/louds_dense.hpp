@@ -46,13 +46,13 @@ namespace surf {
 
             int compare(const std::vector<label_t> &key) const;
 
-            std::string getKey() const;
+            std::vector<label_t> getKey() const;
 
             int getSuffix(word_t *suffix) const;
 
             uint64_t getValue() const;
 
-            std::string getKeyWithSuffix(unsigned *bitlen) const;
+            std::vector<label_t> getKeyWithSuffix(unsigned *bitlen) const;
 
             position_t getSendOutNodeNum() const { return send_out_node_num_; };
 
@@ -393,13 +393,16 @@ namespace surf {
     int LoudsDense::Iter::compare(const std::vector<label_t> &key) const {
         if (is_at_prefix_key_ && (key_len_ - 1) < key.size())
             return -1;
-        std::string iter_key = getKey();
-        std::string key_dense = "";
-        for (int i=0; i<iter_key.length(); i++) {
-            key_dense.append(1,(char) key[i]);
+        std::vector<label_t> iter_key = getKey();
+
+        std::vector<label_t> key_dense;
+        for (int i=0; i<std::min(key.size(),iter_key.size()); i++) {
+            key_dense.emplace_back(key[i]);
         }
-        //key.substr(0, iter_key.length());
-        int compare = iter_key.compare(key_dense);
+
+        int compare = std::memcmp(iter_key.data(),key_dense.data(),std::min(iter_key.size(),key_dense.size()));
+        if (compare == 0 && iter_key.size() > key_dense.size()) compare = 1;
+
         if (compare != 0) return compare;
         if (isComplete()) {
             position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1], is_at_prefix_key_);
@@ -408,13 +411,18 @@ namespace surf {
         return compare;
     }
 
-    std::string LoudsDense::Iter::getKey() const {
+    std::vector<label_t> LoudsDense::Iter::getKey() const {
         if (!is_valid_)
-            return std::string();
+            return std::vector<label_t>(0);
         level_t len = key_len_;
         if (is_at_prefix_key_)
             len--;
-        return std::string((const char *) key_.data(), (size_t) len);
+
+        std::vector<label_t> result;
+        for (int i=0; i<std::min(key_.size(),(size_t)len); i++) {
+            result.emplace_back(key_[i]);
+        }
+        return result;
     }
 
     int LoudsDense::Iter::getSuffix(word_t *suffix) const {
@@ -436,8 +444,8 @@ namespace surf {
         return 0;
     }
 
-    std::string LoudsDense::Iter::getKeyWithSuffix(unsigned *bitlen) const {
-        std::string iter_key = getKey();
+    std::vector<label_t> LoudsDense::Iter::getKeyWithSuffix(unsigned *bitlen) const {
+        std::vector<label_t> iter_key = getKey();
         if (isComplete()
             && ((trie_->suffixes_->getType() == kReal) || (trie_->suffixes_->getType() == kMixed))) {
             position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1], is_at_prefix_key_);
@@ -446,12 +454,12 @@ namespace surf {
                 level_t suffix_len = trie_->suffixes_->getRealSuffixLen();
                 *bitlen = suffix_len % 8;
                 suffix <<= (64 - suffix_len);
-                char *suffix_str = reinterpret_cast<char *>(&suffix);
-                suffix_str += 7;
+                std::vector<label_t> suffix_str = uint64ToByteVector(suffix);
                 unsigned pos = 0;
+                int counter = 0;
                 while (pos < suffix_len) {
-                    iter_key.append(suffix_str, 1);
-                    suffix_str--;
+                    iter_key.emplace_back(suffix_str[counter]);
+                    counter++;
                     pos += 8;
                 }
             }
