@@ -7,7 +7,7 @@
 
 using namespace surf;
 
-    static const std::string kFilePath = "../../test/words.txt";
+    static const std::string kFilePath = "words.txt";
     static const int kTestSize = 1000;
     static const int kIntTestSize = 1001;
     static const uint64_t kIntTestSkip = 10;
