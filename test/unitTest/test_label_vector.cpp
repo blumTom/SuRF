@@ -87,16 +87,16 @@ namespace surf {
                                 continue;
                             // search success
                             search_pos = start_pos;
-                            search_success = labels_->search(test_label, search_pos, search_len).has_value();
+                            search_success = labels_->search(test_label, search_pos, search_len);
                             ASSERT_TRUE(search_success);
                             ASSERT_EQ(i, search_pos);
                         }
                         // search fail
                         search_pos = start_pos;
-                        search_success = labels_->search('\0', search_pos, search_len).has_value();
+                        search_success = labels_->search('\0', search_pos, search_len);
                         ASSERT_FALSE(search_success);
                         search_pos = start_pos;
-                        search_success = labels_->search('\255', search_pos, search_len).has_value();
+                        search_success = labels_->search('\255', search_pos, search_len);
                         ASSERT_FALSE(search_success);
 
                         start_pos += search_len;
@@ -136,45 +136,45 @@ namespace surf {
                             // binary search success
                             binary_search_pos = start_pos;
                             binary_search_success = labels_->binarySearch(labels_->read(i), binary_search_pos,
-                                                                          search_len).has_value();
+                                                                          search_len);
                             ASSERT_TRUE(binary_search_success);
                             ASSERT_EQ(i, binary_search_pos);
 
                             // simd search success
                             simd_search_pos = start_pos;
-                            simd_search_success = labels_->simdSearch(labels_->read(i), simd_search_pos, search_len).has_value();
+                            simd_search_success = labels_->simdSearch(labels_->read(i), simd_search_pos, search_len);
                             ASSERT_TRUE(simd_search_success);
                             ASSERT_EQ(i, simd_search_pos);
 
                             // linear search success
                             linear_search_pos = start_pos;
                             linear_search_success = labels_->linearSearch(labels_->read(i), linear_search_pos,
-                                                                          search_len).has_value();
+                                                                          search_len);
                             ASSERT_TRUE(linear_search_success);
                             ASSERT_EQ(i, linear_search_pos);
                         }
                         // binary search fail
                         binary_search_pos = start_pos;
-                        binary_search_success = labels_->binarySearch('\0', binary_search_pos, search_len).has_value();
+                        binary_search_success = labels_->binarySearch('\0', binary_search_pos, search_len);
                         ASSERT_FALSE(binary_search_success);
                         binary_search_pos = start_pos;
-                        binary_search_success = labels_->binarySearch('\255', binary_search_pos, search_len).has_value();
+                        binary_search_success = labels_->binarySearch('\255', binary_search_pos, search_len);
                         ASSERT_FALSE(binary_search_success);
 
                         // simd search fail
                         simd_search_pos = start_pos;
-                        simd_search_success = labels_->simdSearch('\0', simd_search_pos, search_len).has_value();
+                        simd_search_success = labels_->simdSearch('\0', simd_search_pos, search_len);
                         ASSERT_FALSE(simd_search_success);
                         simd_search_pos = start_pos;
-                        simd_search_success = labels_->simdSearch('\255', simd_search_pos, search_len).has_value();
+                        simd_search_success = labels_->simdSearch('\255', simd_search_pos, search_len);
                         ASSERT_FALSE(simd_search_success);
 
                         // linear search fail
                         linear_search_pos = start_pos;
-                        linear_search_success = labels_->linearSearch('\0', linear_search_pos, search_len).has_value();
+                        linear_search_success = labels_->linearSearch('\0', linear_search_pos, search_len);
                         ASSERT_FALSE(linear_search_success);
                         linear_search_pos = start_pos;
-                        linear_search_success = labels_->linearSearch('\255', linear_search_pos, search_len).has_value();
+                        linear_search_success = labels_->linearSearch('\255', linear_search_pos, search_len);
                         ASSERT_FALSE(linear_search_success);
 
                         start_pos += search_len;
@@ -227,21 +227,21 @@ namespace surf {
                                 label_t next_label = labels_->read(i + 1);
                                 // search existing label
                                 search_pos = start_pos;
-                                search_success = labels_->searchGreaterThan(cur_label, search_pos, search_len).has_value();
+                                search_success = labels_->searchGreaterThan(cur_label, search_pos, search_len);
                                 ASSERT_TRUE(search_success);
                                 ASSERT_EQ(i + 1, search_pos);
 
                                 // search midpoint (could be non-existing label)
                                 label_t test_label = cur_label + ((next_label - cur_label) / 2);
                                 search_pos = start_pos;
-                                search_success = labels_->searchGreaterThan(test_label, search_pos, search_len).has_value();
+                                search_success = labels_->searchGreaterThan(test_label, search_pos, search_len);
                                 ASSERT_TRUE(search_success);
                                 ASSERT_EQ(i + 1, search_pos);
                             } else {
                                 // search out-of-bound label
                                 search_pos = start_pos;
                                 search_success = labels_->searchGreaterThan(labels_->read(start_pos + search_len - 1),
-                                                                            search_pos, search_len).has_value();
+                                                                            search_pos, search_len);
                                 ASSERT_FALSE(search_success);
                                 ASSERT_EQ(start_pos + terminator_offset, search_pos);
                             }
