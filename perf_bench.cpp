@@ -33,7 +33,7 @@ int main() {
     int queries_count = 10;
 
     BenchmarkParameters params;
-    params.setParam("name","SURF Benchmark");
+    //params.setParam("name","SURF Benchmark");
 
     // benchmark ACT
     {

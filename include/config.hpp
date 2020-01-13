@@ -6,6 +6,8 @@
 #include <vector>
 #include <cstring>
 
+using namespace std;
+
 namespace surf {
 
     using level_t = uint32_t;

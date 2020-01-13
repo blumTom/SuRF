@@ -17,6 +17,6 @@ list(REMOVE_ITEM TEST_CC test/unitTest/tester.cpp)
 # ---------------------------------------------------------------------------
 
 add_executable(tester test/unitTest/tester.cpp ${TEST_CC})
-target_link_libraries(tester surf gtest gmock)
+target_link_libraries(tester surf ${GTEST_LIBRARIES})
 #enable_testing()
 #add_test(surf tester)
