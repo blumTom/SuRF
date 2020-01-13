@@ -25,12 +25,12 @@ public:
     }
 
     bool lookup(const std::string& key) {
-	return filter_->lookupKey(key);
+	return filter_->lookupKey(key).has_value();
     }
 
     bool lookupRange(const std::string& left_key, const std::string& right_key) {
 	//return filter_->lookupRange(left_key, false, right_key, false);
-	return filter_->lookupRange(left_key, true, right_key, true);
+	return filter_->lookupRange(left_key, true, right_key, true).size() > 0;
     }
 
     uint64_t getMemoryUsage() {

@@ -344,17 +344,14 @@ namespace surf {
     }
 
     std::optional<uint64_t> SuRF::lookupKey(const std::string &key) const {
-        //std::cout << "Lookup key " << key << ": ";
         return lookupKey(stringToByteVector(key));
     }
 
     std::optional<uint64_t> SuRF::lookupKey(const uint32_t &key) const {
-        //std::cout << "Lookup key " << key << ": ";
         return lookupKey(uint32ToByteVector(key));
     }
 
     std::optional<uint64_t> SuRF::lookupKey(const uint64_t &key) const {
-        //std::cout << "Lookup key " << key << ": ";
         return lookupKey(uint64ToByteVector(key));
     }
 

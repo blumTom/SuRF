@@ -37,3 +37,7 @@ cmake-build-debug/
 
 # CLion IDE
 .idea/
+
+# Test Suite
+bench/workload_gen/YCSB/
+bench/workloads/
