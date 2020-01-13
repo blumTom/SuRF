@@ -36,6 +36,7 @@ enable_testing()
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/tlx
+        ${CMAKE_CURRENT_SOURCE_DIR}/perfevent
         ${GTEST_INCLUDE_DIR}
         ${GMOCK_INCLUDE_DIR}
         ${GFLAGS_INCLUDE_DIR})
@@ -48,6 +49,10 @@ target_link_libraries(simple_example surf)
 add_executable(simple_bench simple_bench.cpp)
 #find_library(tlxLib libtlx.a PATHS ${CMAKE_SOURCE_DIR}/build/tlx/tlx)
 target_link_libraries(simple_bench surf tlx)
+
+add_executable(perf_bench perf_bench.cpp)
+#find_library(tlxLib libtlx.a PATHS ${CMAKE_SOURCE_DIR}/build/tlx/tlx)
+target_link_libraries(perf_bench surf tlx)
 
 include("${CMAKE_SOURCE_DIR}/src/local.cmake")
 include("${CMAKE_SOURCE_DIR}/test/unitTest/local.cmake")
