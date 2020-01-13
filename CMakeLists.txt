@@ -1,4 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
+
+add_subdirectory(tlx)
+
 project (SuRF)
 
 message(STATUS "Configuring..." ${CMAKE_PROJECT_NAME})
@@ -41,8 +44,8 @@ add_executable(simple_example simple_example.cpp)
 target_link_libraries(simple_example surf)
 
 add_executable(simple_bench simple_bench.cpp)
-find_library(tlxLib libtlx.a PATHS ${CMAKE_SOURCE_DIR}/build/tlx/tlx)
-target_link_libraries(simple_bench surf ${tlxLib})
+#find_library(tlxLib libtlx.a PATHS ${CMAKE_SOURCE_DIR}/build/tlx/tlx)
+target_link_libraries(simple_bench surf tlx)
 
 include("${CMAKE_SOURCE_DIR}/src/local.cmake")
 include("${CMAKE_SOURCE_DIR}/test/unitTest/local.cmake")
