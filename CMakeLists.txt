@@ -40,6 +40,8 @@ include_directories(
         ${GMOCK_INCLUDE_DIR}
         ${GFLAGS_INCLUDE_DIR})
 
+file(COPY test/words.txt DESTINATION ${CMAKE_BINARY_DIR})
+
 add_executable(simple_example simple_example.cpp)
 target_link_libraries(simple_example surf)
 
