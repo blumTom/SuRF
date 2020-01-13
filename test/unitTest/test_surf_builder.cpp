@@ -8,32 +8,20 @@
 
 #include "config.hpp"
 #include "surf_builder.hpp"
+#include "testsuite.hpp"
 
 namespace surf {
 
     namespace buildertest {
 
-        static const std::string kFilePath = "../../../test/words.txt";
-        static const int kTestSize = 234369;
-        static const int kIntTestSize = 1000000;
-        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
-        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words_dup;
-
         class SuRFBuilderUnitTest : public ::testing::Test {
         public:
             virtual void SetUp() {
-                truncateSuffixes(words, words_trunc_);
-                fillinInts();
-                truncateSuffixes(ints_, ints_trunc_);
-            }
 
-            void truncateSuffixes(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
-                                  std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc);
+            }
 
             bool DoesPrefixMatchInTrunc(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc,
                                         int i, int j, int len);
-
-            void fillinInts();
 
             void testSparse(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
                             const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc);
@@ -46,59 +34,8 @@ namespace surf {
             void printSparseNode(level_t level, position_t pos);
 
             SuRFBuilder *builder_;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_trunc_;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_trunc_;
         };
 
-        static int getCommonPrefixLen(const std::vector<label_t> &a, const std::vector<label_t> &b) {
-            int len = 0;
-            while ((len < (int) a.size()) && (len < (int) b.size()) && (a[len] == b[len]))
-                len++;
-            return len;
-        }
-
-        static int getMax(int a, int b) {
-            if (a < b)
-                return b;
-            return a;
-        }
-
-        void SuRFBuilderUnitTest::truncateSuffixes(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
-                                                   std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc) {
-            assert(keys.size() > 1);
-
-            int commonPrefixLen = 0;
-            for (unsigned i = 0; i < keys.size(); i++) {
-                if (i == 0) {
-                    commonPrefixLen = getCommonPrefixLen(keys[i].first, keys[i + 1].first);
-                } else if (i == keys.size() - 1) {
-                    commonPrefixLen = getCommonPrefixLen(keys[i - 1].first, keys[i].first);
-                } else {
-                    commonPrefixLen = getMax(getCommonPrefixLen(keys[i - 1].first, keys[i].first),
-                                             getCommonPrefixLen(keys[i].first, keys[i + 1].first));
-                }
-
-                if (commonPrefixLen < (int) keys[i].first.size()) {
-                    std::vector<label_t> subVector;
-                    for (int j=0; j<commonPrefixLen + 1; j++) {
-                        subVector.emplace_back(keys[i].first[j]);
-                    }
-                    keys_trunc.push_back({subVector,keys[i].second});
-                } else {
-                    keys_trunc.push_back(keys[i]);
-                    keys_trunc[i].first.emplace_back(kTerminator);
-                }
-            }
-        }
-
-        void SuRFBuilderUnitTest::fillinInts() {
-            for (uint64_t i = 0; i < kIntTestSize; i += 10) {
-                ints_.push_back({uint64ToByteVector(i),i});
-            }
-        }
-
-//debug
         void printIndent(level_t level) {
             for (level_t l = 0; l < level; l++)
                 std::cout << "\t";
@@ -402,29 +339,6 @@ namespace surf {
             }
         }
 
-        void loadWordList() {
-            std::ifstream infile(kFilePath);
-            std::string keyStr;
-            int count = 0;
-            while (infile.good() && count < kTestSize) {
-                infile >> keyStr;
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                words.push_back({key,count});
-                words_dup.push_back({key,2 * count});
-                words_dup.push_back({key,2 * count + 1});
-                count++;
-            }
-        }
-
     } // namespace buildertest
 
 } // namespace surf
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    surf::buildertest::loadWordList();
-    return RUN_ALL_TESTS();
-}

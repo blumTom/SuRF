@@ -9,14 +9,11 @@
 #include "config.hpp"
 #include "label_vector.hpp"
 #include "surf_builder.hpp"
+#include "testsuite.hpp"
 
 namespace surf {
 
     namespace labelvectortest {
-
-        static const std::string kFilePath = "../../../test/words.txt";
-        static const int kTestSize = 234369;
-        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class LabelVectorUnitTest : public ::testing::Test {
         public:
@@ -254,27 +251,6 @@ namespace surf {
             }
         }
 
-        void loadWordList() {
-            std::ifstream infile(kFilePath);
-            std::string keyStr;
-            int count = 0;
-            while (infile.good() && count < kTestSize) {
-                infile >> keyStr;
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                words.push_back({key,count});
-                count++;
-            }
-        }
-
     } // namespace labelvectortest
 
 } // namespace surf
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    surf::labelvectortest::loadWordList();
-    return RUN_ALL_TESTS();
-}

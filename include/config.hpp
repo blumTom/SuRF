@@ -2,7 +2,8 @@
 #define CONFIG_H_
 
 #include <stdint.h>
-#include <string.h>
+#include <string>
+#include <vector>
 
 namespace surf {
 
@@ -33,41 +34,41 @@ namespace surf {
         kMixed = 3
     };
 
-    void align(char *&ptr) {
+    static void align(char *&ptr) {
         ptr = (char *) (((uint64_t) ptr + 7) & ~((uint64_t) 7));
     }
 
-    void sizeAlign(position_t &size) {
+    static void sizeAlign(position_t &size) {
         size = (size + 7) & ~((position_t) 7);
     }
 
-    void sizeAlign(uint64_t &size) {
+    static void sizeAlign(uint64_t &size) {
         size = (size + 7) & ~((uint64_t) 7);
     }
 
-    std::string uint64ToString(const uint64_t word) {
+    static std::string uint64ToString(const uint64_t word) {
         uint64_t endian_swapped_word = __builtin_bswap64(word);
         return std::string(reinterpret_cast<const char *>(&endian_swapped_word), 8);
     }
 
-    uint64_t stringToUint64(const std::string &str_word) {
+    static uint64_t stringToUint64(const std::string &str_word) {
         uint64_t int_word = 0;
         memcpy(reinterpret_cast<char *>(&int_word), str_word.data(), 8);
         return __builtin_bswap64(int_word);
     }
 
-    std::string uint32ToString(const uint32_t word) {
+    static std::string uint32ToString(const uint32_t word) {
         uint32_t endian_swapped_word = __builtin_bswap32(word);
         return std::string(reinterpret_cast<const char *>(&endian_swapped_word), 4);
     }
 
-    uint32_t stringToUint32(const std::string &str_word) {
+    static uint32_t stringToUint32(const std::string &str_word) {
         uint32_t int_word = 0;
         memcpy(reinterpret_cast<char *>(&int_word), str_word.data(), 4);
         return __builtin_bswap32(int_word);
     }
 
-    std::vector<label_t> stringToByteVector(const std::string &word) {
+    static std::vector<label_t> stringToByteVector(const std::string &word) {
         std::vector<label_t> result;
         for (int i=0; i<word.length(); i++) {
             result.emplace_back(word[i]);
@@ -75,7 +76,7 @@ namespace surf {
         return result;
     }
 
-    std::vector<label_t> uint32ToByteVector(const uint32_t &word) {
+    static std::vector<label_t> uint32ToByteVector(const uint32_t &word) {
         std::vector<label_t> result;
         for (int i=3; i>=0; i--) {
             uint32_t temp = word;
@@ -86,7 +87,7 @@ namespace surf {
         return result;
     }
 
-    std::vector<label_t> uint64ToByteVector(const uint64_t &word) {
+    static std::vector<label_t> uint64ToByteVector(const uint64_t &word) {
         std::vector<label_t> result;
         for (int i=7; i>=0; i--) {
             uint64_t temp = word;
@@ -97,7 +98,7 @@ namespace surf {
         return result;
     }
 
-    bool isSameKey(const std::vector<label_t> &a, const std::vector<label_t> &b, position_t limit) {
+    static bool isSameKey(const std::vector<label_t> &a, const std::vector<label_t> &b, position_t limit) {
         if (a.size() < limit || b.size() < limit) return false;
 
         for (int i=0; i<limit; i++) {

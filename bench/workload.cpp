@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     }
 
     // load keys from files =======================================
-    std::string load_file = "workloads/load_";
+    std::string load_file = "../../bench/workloads/load_";
     load_file += key_type;
     std::vector<std::string> load_keys;
     if (key_type.compare(std::string("email")) == 0)

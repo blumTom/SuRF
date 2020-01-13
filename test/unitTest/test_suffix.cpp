@@ -9,14 +9,11 @@
 #include "config.hpp"
 #include "suffix.hpp"
 #include "surf_builder.hpp"
+#include "testsuite.hpp"
 
 namespace surf {
 
     namespace suffixtest {
-
-        static const std::string kFilePath = "../../../test/words.txt";
-        static const int kTestSize = 234369;
-        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class SuffixUnitTest : public ::testing::Test {
         public:
@@ -41,19 +38,6 @@ namespace surf {
             std::vector<std::vector<std::pair<std::vector<label_t>,uint64_t>>> words_by_suffix_start_level_;
             char *data_;
         };
-
-        static int getCommonPrefixLen(const std::vector<label_t> &a, const std::vector<label_t> &b) {
-            int len = 0;
-            while ((len < (int) a.size()) && (len < (int) b.size()) && (a[len] == b[len]))
-                len++;
-            return len;
-        }
-
-        static int getMax(int a, int b) {
-            if (a < b)
-                return b;
-            return a;
-        }
 
         void SuffixUnitTest::computeWordsBySuffixStartLevel() {
             assert(words.size() > 1);
@@ -262,27 +246,6 @@ namespace surf {
             }
         }
 
-        void loadWordList() {
-            std::ifstream infile(kFilePath);
-            std::string keyStr;
-            int count = 0;
-            while (infile.good() && count < kTestSize) {
-                infile >> keyStr;
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                words.push_back({key,count});
-                count++;
-            }
-        }
-
     } // namespace suffixtest
 
 } // namespace surf
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    surf::suffixtest::loadWordList();
-    return RUN_ALL_TESTS();
-}

@@ -17,14 +17,14 @@ namespace surf {
         static const SuffixType kSuffixType = kReal;
         static const level_t kSuffixLen = 8;
 
-        class SuRFSmallTest : public ::testing::Test {
+        class SuRFSparseSmallTest : public ::testing::Test {
         public:
             virtual void SetUp() {}
 
             virtual void TearDown() {}
         };
 
-        TEST_F (SuRFSmallTest, ExampleInPaperTest) {
+        TEST_F (SuRFSparseSmallTest, ExampleInPaperTest) {
             std::vector<std::pair<std::vector<label_t>,uint64_t>> keys;
 
             keys.push_back({stringToByteVector(std::string("f")),0});
@@ -54,8 +54,3 @@ namespace surf {
     } // namespace surftest
 
 } // namespace surf
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

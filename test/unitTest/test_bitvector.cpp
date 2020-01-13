@@ -9,14 +9,11 @@
 #include "bitvector.hpp"
 #include "config.hpp"
 #include "surf_builder.hpp"
+#include "testsuite.hpp"
 
 namespace surf {
 
     namespace bitvectortest {
-
-        static const std::string kFilePath = "../../../test/words.txt";
-        static const int kTestSize = 234369;
-        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class BitvectorUnitTest : public ::testing::Test {
         public:
@@ -192,6 +189,7 @@ namespace surf {
                     distance++;
                 }
             }
+
             if (bv2_->readBit(0)) {
                 for (position_t i = 1; i <= distance; i++)
                     distanceVector[i] = i;
@@ -207,27 +205,6 @@ namespace surf {
             }
         }
 
-        void loadWordList() {
-            std::ifstream infile(kFilePath);
-            std::string keyStr;
-            int count = 0;
-            while (infile.good() && count < kTestSize) {
-                infile >> keyStr;
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                words.push_back({key,count});
-                count++;
-            }
-        }
-
     } // namespace bitvectortest
 
 } // namespace surf
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    surf::bitvectortest::loadWordList();
-    return RUN_ALL_TESTS();
-}

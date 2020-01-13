@@ -12,7 +12,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -Wall -mpopcnt -pthread -std=c++17")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror -mpopcnt -pthread -std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror -Wno-unused-function -mpopcnt -pthread -std=c++17")
 
 option(COVERALLS "Generate coveralls data" OFF)
 
@@ -30,10 +30,23 @@ endif()
 
 enable_testing()
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tlx
+        ${GTEST_INCLUDE_DIR}
+        ${GMOCK_INCLUDE_DIR}
+        ${GFLAGS_INCLUDE_DIR})
 
-add_subdirectory(test)
-add_subdirectory(bench)
+add_executable(simple_example simple_example.cpp)
+target_link_libraries(simple_example surf)
+
+add_executable(simple_bench simple_bench.cpp)
+find_library(tlxLib libtlx.a PATHS ${CMAKE_SOURCE_DIR}/build/tlx/tlx)
+target_link_libraries(simple_bench surf ${tlxLib})
+
+include("${CMAKE_SOURCE_DIR}/src/local.cmake")
+include("${CMAKE_SOURCE_DIR}/test/unitTest/local.cmake")
+include("${CMAKE_SOURCE_DIR}/bench/local.cmake")
 
 #include_directories("${CMAKE_CURRENT_SOURCE_DIR}/ARF/include")
 #add_subdirectory(ARF)

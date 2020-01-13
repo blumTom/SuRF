@@ -9,28 +9,22 @@
 #include "config.hpp"
 #include "louds_dense.hpp"
 #include "surf_builder.hpp"
+#include "testsuite.hpp"
 
 namespace surf {
 
     namespace densetest {
 
-        static const std::string kFilePath = "../../../test/words.txt";
-        static const int kTestSize = 234369;
-        static const int kIntTestBound = 1000001;
-        static const uint64_t kIntTestSkip = 10;
         static const bool kIncludeDense = true;
         static const uint32_t kSparseDenseRatio = 0;
         static const int kNumSuffixType = 4;
         static const SuffixType kSuffixTypeList[kNumSuffixType] = {kNone, kHash, kReal, kMixed};
         static const int kNumSuffixLen = 6;
         static const level_t kSuffixLenList[kNumSuffixLen] = {1, 3, 7, 8, 13, 26};
-        static std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
 
         class DenseUnitTest : public ::testing::Test {
         public:
             virtual void SetUp() {
-                truncateSuffixes(words,words_trunc_);
-                fillinInts();
                 data_ = nullptr;
             }
 
@@ -41,34 +35,14 @@ namespace surf {
 
             void newBuilder(SuffixType suffix_type, level_t suffix_len);
 
-            void truncateSuffixes(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
-                                  std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc);
-
-            void fillinInts();
-
             void testSerialize();
 
             void testLookupWord();
 
             SuRFBuilder *builder_;
             LoudsDense *louds_dense_;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_trunc_;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_;
             char *data_;
         };
-
-        static int getCommonPrefixLen(const std::vector<label_t> &a, const std::vector<label_t> &b) {
-            int len = 0;
-            while ((len < (int) a.size()) && (len < (int) b.size()) && (a[len] == b[len]))
-                len++;
-            return len;
-        }
-
-        static int getMax(int a, int b) {
-            if (a < b)
-                return b;
-            return a;
-        }
 
         void DenseUnitTest::newBuilder(SuffixType suffix_type, level_t suffix_len) {
             if (suffix_type == kNone)
@@ -81,40 +55,6 @@ namespace surf {
                 builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kMixed, suffix_len, suffix_len);
             else
                 builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
-        }
-
-        void DenseUnitTest::truncateSuffixes(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
-                                              std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys_trunc) {
-            assert(words.size() > 1);
-
-            int commonPrefixLen = 0;
-            for (unsigned i = 0; i < keys.size(); i++) {
-                if (i == 0) {
-                    commonPrefixLen = getCommonPrefixLen(keys[i].first, keys[i + 1].first);
-                } else if (i == keys.size() - 1) {
-                    commonPrefixLen = getCommonPrefixLen(keys[i - 1].first, keys[i].first);
-                } else {
-                    commonPrefixLen = getMax(getCommonPrefixLen(keys[i - 1].first, keys[i].first),
-                                             getCommonPrefixLen(keys[i].first, keys[i + 1].first));
-                }
-
-                if (commonPrefixLen < (int) keys[i].first.size()) {
-                    std::vector<label_t> subVector;
-                    for (int j=0; j<commonPrefixLen + 1; j++) {
-                        subVector.emplace_back(keys[i].first[j]);
-                    }
-                    keys_trunc.push_back({subVector,keys[i].second});
-                } else {
-                    keys_trunc.push_back(keys[i]);
-                    keys_trunc[i].first.emplace_back(kTerminator);
-                }
-            }
-        }
-
-        void DenseUnitTest::fillinInts() {
-            for (uint64_t i = 0; i < kIntTestBound; i += kIntTestSkip) {
-                ints_.push_back({uint64ToByteVector(i),i});
-            }
         }
 
         void DenseUnitTest::testSerialize() {
@@ -182,7 +122,7 @@ namespace surf {
             louds_dense_ = new LoudsDense(builder_);
             position_t out_node_num = 0;
 
-            for (uint64_t i = 0; i < kIntTestBound; i += kIntTestSkip) {
+            for (uint64_t i = 0; i < kIntTestSize; i += kIntTestSkip) {
                 bool key_exist = louds_dense_->lookupKey(uint64ToString(i), out_node_num).has_value();
                 if (i % kIntTestSkip == 0) {
                     ASSERT_TRUE(key_exist);
@@ -250,7 +190,7 @@ namespace surf {
             for (int i = 0; i < 2; i++) {
                 if (i == 1)
                     inclusive = false;
-                for (uint64_t j = 0; j < kIntTestBound; j++) {
+                for (uint64_t j = 0; j < kIntTestSize; j++) {
                     LoudsDense::Iter iter(louds_dense_);
                     bool could_be_fp = louds_dense_->moveToKeyGreaterThan(uint64ToString(j), inclusive, iter);
 
@@ -268,11 +208,11 @@ namespace surf {
                 }
 
                 LoudsDense::Iter iter(louds_dense_);
-                bool could_be_fp = louds_dense_->moveToKeyGreaterThan(uint64ToString(kIntTestBound - 1), inclusive,
+                bool could_be_fp = louds_dense_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - 1), inclusive,
                                                                       iter);
                 if (could_be_fp) {
                     std::vector<label_t> iter_key = iter.getKey();
-                    std::vector<label_t> int_key_fp = uint64ToByteVector(kIntTestBound - 1);
+                    std::vector<label_t> int_key_fp = uint64ToByteVector(kIntTestSize - 1);
                     bool is_prefix = isSameKey(iter_key,int_key_fp,iter_key.size());
                     ASSERT_TRUE(is_prefix);
                 } else {
@@ -314,7 +254,7 @@ namespace surf {
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
             louds_dense_->moveToKeyGreaterThan(uint64ToString(0), inclusive, iter);
-            for (uint64_t i = kIntTestSkip; i < kIntTestBound; i += kIntTestSkip) {
+            for (uint64_t i = kIntTestSkip; i < kIntTestSize; i += kIntTestSkip) {
                 iter++;
                 ASSERT_TRUE(iter.isValid());
                 ASSERT_TRUE(iter.isComplete());
@@ -358,8 +298,8 @@ namespace surf {
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
-            louds_dense_->moveToKeyGreaterThan(uint64ToString(kIntTestBound - kIntTestSkip), inclusive, iter);
-            for (uint64_t i = kIntTestBound - 1 - kIntTestSkip; i > 0; i -= kIntTestSkip) {
+            louds_dense_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - kIntTestSkip), inclusive, iter);
+            for (uint64_t i = kIntTestSize - 1 - kIntTestSkip; i > 0; i -= kIntTestSkip) {
                 iter--;
                 ASSERT_TRUE(iter.isValid());
                 ASSERT_TRUE(iter.isComplete());
@@ -376,27 +316,6 @@ namespace surf {
             delete louds_dense_;
         }
 
-        void loadWordList() {
-            std::ifstream infile(kFilePath);
-            std::string keyStr;
-            int count = 0;
-            while (infile.good() && count < kTestSize) {
-                infile >> keyStr;
-                std::vector<label_t> key;
-                for (int i=0; i<keyStr.length(); i++) {
-                    key.emplace_back(keyStr[i]);
-                }
-                words.push_back({key,count});
-                count++;
-            }
-        }
-
     } // namespace densetest
 
 } // namespace surf
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    surf::densetest::loadWordList();
-    return RUN_ALL_TESTS();
-}
