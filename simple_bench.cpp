@@ -36,36 +36,42 @@ int main() {
             std::less<unsigned int>,
             traits_nodebug<unsigned int> >
             btree_type;
-
     btree_type bt;
 
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint32_t> dis;
-
     std::vector<uint32_t> randomKeys;
-    for (unsigned int i = 0; i < 15000; i++) {
+    for (unsigned int i = 0; i < 1000000; i++) {
         uint32_t generatedKey = dis(gen);
         randomKeys.emplace_back(generatedKey);
     }
     std::sort(randomKeys.begin(), randomKeys.end(), std::less<uint64_t>());
 
-    auto start = std::chrono::system_clock::now();
-    for (uint64_t i=0; i<randomKeys.size(); i++) {
-        bt.insert2(randomKeys[i],i+1);
+
+    std::vector<std::pair<uint32_t,uint64_t>> btreePairs;
+    for (int i=0; i<randomKeys.size(); i++) {
+        btreePairs.emplace_back(std::make_pair(randomKeys[i], static_cast<uint64_t>(i+1)));
     }
+    auto start = std::chrono::system_clock::now();
+    bt.bulk_load(btreePairs.begin(),btreePairs.end());
     auto end = std::chrono::system_clock::now();
     std::cout << "BTreeSize: " << bt.size() << "\n";
-    std::cout << "BTree Build Time: " << (end - start).count() << "[ns]\n";
+    std::cout << "BTree Build Time:\t" << (end - start).count() << "[microseconds]\n";
 
+
+    std::vector<std::pair<std::vector<label_t>,uint64_t>> surfPairs;
+    for (int i=0; i<randomKeys.size(); i++) {
+        surfPairs.emplace_back(std::make_pair(uint32ToByteVector(randomKeys[i]), static_cast<uint64_t>(i+1)));
+    }
     start = std::chrono::system_clock::now();
-    SuRF *surf = new SuRF(randomKeys, true, 3, surf::kNone, 0, 0);
+    SuRF *surf = new SuRF(surfPairs, true, 3, surf::kNone, 0, 0);
     end = std::chrono::system_clock::now();
-    std::cout << "SURF Build Time: " << (end - start).count() << "[ns]\n";
+    std::cout << "SURF Build Time:\t" << (end - start).count() << "[microseconds]\n";
+
 
     std::optional<uint64_t> result = std::nullopt;
-    uint32_t key = dis(gen);
-
+    uint32_t key = 0;
     int falsePositives = 0;
     int truePositives = 0;
     for (int i=0; i<10; ) {
@@ -84,17 +90,14 @@ int main() {
     } else {
         std::cout << "ErrorRate (TP:FP) => 1:" << static_cast<int>(static_cast<double>(truePositives) / static_cast<double>(falsePositives)) << "\n";
     }
-
-
     start = std::chrono::system_clock::now();
-    std::cout << "BTree Value: " << bt.find(key)->second << "\n";
+    std::cout << "BTree Value:\t" << bt.find(key)->second << "\n";
     end = std::chrono::system_clock::now();
-    std::cout << "BTree Lookup Time: " << (end - start).count() << "[ns]\n";
-
+    std::cout << "BTree Lookup Time:\t" << (end - start).count() << "[microseconds]\n";
     start = std::chrono::system_clock::now();
-    std::cout << "SURF Value: " << surf->lookupKey(key).value() << "\n";
+    std::cout << "SURF Value:\t" << surf->lookupKey(key).value() << "\n";
     end = std::chrono::system_clock::now();
-    std::cout << "SURF Lookup Time: " << (end - start).count() << "[ns]\n";
+    std::cout << "SURF Lookup Time:\t" << (end - start).count() << "[microseconds]\n";
 
     /*std::cout << ((uint64_t) randomKeys[result.value() - 1]) << "\n";
     std::cout << counter << "\n";*/
