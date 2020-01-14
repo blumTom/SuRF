@@ -21,28 +21,43 @@ int main() {
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint32_t> dis;
 
+    int generatedKeys = 15000000;
     std::vector<uint32_t> randomKeys;
-    for (unsigned int i = 0; i < 15000; i++) {
+    for (unsigned int i = 0; i < generatedKeys; i++) {
         uint32_t generatedKey = dis(gen);
         randomKeys.emplace_back(generatedKey);
     }
     std::sort(randomKeys.begin(), randomKeys.end(), std::less<uint64_t>());
 
-    SuRF *surf = new SuRF(randomKeys, true, 3, surf::kNone, 0, 0);
+    int step = 500000;
 
-    int queries_count = 10;
+    for (int insertedKeysCount = step; insertedKeysCount<generatedKeys; insertedKeysCount = insertedKeysCount + step) {
+        std::cout << "insertedKeysCount: " << insertedKeysCount << "\n";
 
-    BenchmarkParameters params;
-    //params.setParam("name","SURF Benchmark");
+        BenchmarkParameters params;
+        params.setParam("name","Build surf");
+        SuRF *surf;
+        {
+            std::vector<uint32_t> insertKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                insertKeys.emplace_back(randomKeys[i]);
+            }
+            PerfEventBlock e(1, params, true);
+            surf = new SuRF(insertKeys, true, 3, surf::kNone, 0, 0);
+        }
 
-    // benchmark ACT
-    {
-        PerfEventBlock e(queries_count, params, true);
+        params.setParam("name","Lookup UD");
+        int queries_count = 1000;
+        {
+            std::vector<uint32_t> lookupKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                lookupKeys.emplace_back(dis(gen));
+            }
+            PerfEventBlock e(queries_count, params, false);
 
-        uint32_t key = dis(gen);
-        for (size_t cntr = 0; cntr < queries_count; cntr++) {
-            key = dis(gen);
-            surf->lookupKey(key);
+            for (size_t i = 0; i < queries_count; i++) {
+                surf->lookupKey(lookupKeys[i]);
+            }
         }
     }
 }
