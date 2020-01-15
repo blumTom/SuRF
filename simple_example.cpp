@@ -10,8 +10,6 @@ int main() {
             "f",
             "far",
             "fast",
-            "s",
-            "top",
             "toy",
             "trie",
     };
@@ -67,6 +65,7 @@ int main() {
     std::cout << "\n";*/
 
     SuRF *surf = new SuRF(keys);
+    std::cout << "Memory Usage: " << surf->getMemoryUsage() << " Bytes\n";
 
     // use default dense-to-sparse ratio; specify suffix type and length
     SuRF *surf_hash = new SuRF(keys, surf::kHash, 8, 0);
@@ -80,7 +79,7 @@ int main() {
     //----------------------------------------
     std::cout << "Point Query Example: fase" << std::endl;
 
-    std::string key = "fase";
+    std::string key = "trie";
 
     std::optional<uint64_t> result = surf->lookupKey(key);
     if (result.has_value())

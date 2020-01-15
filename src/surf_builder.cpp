@@ -57,7 +57,7 @@ namespace surf {
         insertKeyByte(key[level], level, is_start_of_node, is_term);
         level++;
         if (level > next_key.size() || !isSameKey(key, next_key, level)) {
-            values_[level - 1].push_back(value);
+            (*values_)[level - 1].push_back(value);
             return level;
         }
 
@@ -76,7 +76,7 @@ namespace surf {
             is_term = true;
             insertKeyByte(kTerminator, level, is_start_of_node, is_term);
         }
-        values_[level].push_back(value);
+        (*values_)[level].push_back(value);
         level++;
 
         return level;
@@ -235,7 +235,7 @@ namespace surf {
     }
 
     void SuRFBuilder::addLevel() {
-        values_.push_back(std::vector<uint64_t>());
+        (*values_).push_back(std::vector<uint64_t>());
         labels_.push_back(std::vector<label_t>());
         child_indicator_bits_.push_back(std::vector<word_t>());
         louds_bits_.push_back(std::vector<word_t>());

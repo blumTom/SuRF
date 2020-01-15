@@ -16,7 +16,9 @@ namespace surf {
 
     class SuRFBuilder {
     public:
-        SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone) {};
+        SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone) {
+            values_ = std::make_shared<std::vector<std::vector<uint64_t>>>(0);
+        };
 
         explicit SuRFBuilder(bool include_dense,
                              uint32_t sparse_dense_ratio,
@@ -27,7 +29,9 @@ namespace surf {
                                                         sparse_start_level_(0),
                                                         suffix_type_(suffix_type),
                                                         hash_suffix_len_(hash_suffix_len),
-                                                        real_suffix_len_(real_suffix_len) {};
+                                                        real_suffix_len_(real_suffix_len) {
+            values_ = std::make_shared<std::vector<std::vector<uint64_t>>>(0);
+        };
 
         ~SuRFBuilder() {};
 
@@ -112,7 +116,7 @@ namespace surf {
             return real_suffix_len_;
         }
 
-        std::vector<std::vector<uint64_t>> getValues() const {
+        std::shared_ptr<std::vector<std::vector<uint64_t>>> getValues() const {
             return values_;
         }
 
@@ -203,7 +207,7 @@ namespace surf {
         std::vector<position_t> node_counts_;
         std::vector<bool> is_last_item_terminator_;
 
-        std::vector<std::vector<uint64_t>> values_;
+        std::shared_ptr<std::vector<std::vector<uint64_t>>> values_;
     };
 
 } // namespace surf

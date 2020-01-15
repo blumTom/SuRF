@@ -314,6 +314,8 @@ namespace surf {
         LoudsSparse *louds_sparse_;
         SuRFBuilder *builder_;
         SuRF::Iter iter_;
+
+        shared_ptr<std::vector<std::vector<uint64_t>>> values_;
     };
 
 } // namespace surf

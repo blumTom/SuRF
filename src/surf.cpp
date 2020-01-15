@@ -1,3 +1,4 @@
+#include <iostream>
 #include "surf.hpp"
 
 namespace surf {
@@ -10,6 +11,7 @@ namespace surf {
                       const level_t real_suffix_len) {
         builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
         builder_->build(keys);
+        values_ = builder_->getValues();
         louds_dense_ = new LoudsDense(builder_);
         louds_sparse_ = new LoudsSparse(builder_);
         iter_ = SuRF::Iter(this);
@@ -187,7 +189,11 @@ namespace surf {
     }
 
     uint64_t SuRF::getMemoryUsage() const {
-        return (sizeof(SuRF) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
+        size_t valuesCount = 0;
+        for (int i=0; i<values_->size(); i++) {
+            valuesCount += (*values_)[i].size();
+        }
+        return (sizeof(SuRF) + valuesCount * sizeof(uint64_t) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
     }
 
     level_t SuRF::getHeight() const {

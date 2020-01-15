@@ -131,14 +131,14 @@ namespace surf {
         uint64_t getMemoryUsage() const;
 
         uint64_t getValue(level_t level, position_t pos) const {
-            assert(values_.size() > level);
+            assert(values_->size() > level);
             int diff = 0;
             for (int i=0;i<level; i++) {
-                diff += values_[i].size();
+                diff += (*values_)[i].size();
             }
             pos -= diff;
-            assert(values_[level].size() > pos);
-            return values_[level][pos];
+            assert((*values_)[level].size() > pos);
+            return (*values_)[level][pos];
         }
 
         void serialize(char *&dst) const {
@@ -196,7 +196,7 @@ namespace surf {
         BitvectorRank *prefixkey_indicator_bits_; //1 bit per internal node
         BitvectorSuffix *suffixes_;
 
-        std::vector<std::vector<uint64_t>> values_;
+        shared_ptr<std::vector<std::vector<uint64_t>>> values_;
     };
 
 } //namespace surf
