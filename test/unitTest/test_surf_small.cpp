@@ -23,21 +23,21 @@ namespace surf {
         };
 
         TEST_F (SuRFSmallTest, ExampleInPaperTest) {
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> keys;
+            std::vector<std::pair<std::string,uint64_t>> keys;
 
-            keys.push_back({stringToByteVector(std::string("f")),0});
-            keys.push_back({stringToByteVector(std::string("far")),1});
-            keys.push_back({stringToByteVector(std::string("fas")),2});
-            keys.push_back({stringToByteVector(std::string("fast")),3});
-            keys.push_back({stringToByteVector(std::string("fat")),4});
-            keys.push_back({stringToByteVector(std::string("s")),5});
-            keys.push_back({stringToByteVector(std::string("top")),6});
-            keys.push_back({stringToByteVector(std::string("toy")),7});
-            keys.push_back({stringToByteVector(std::string("trie")),8});
-            keys.push_back({stringToByteVector(std::string("trip")),9});
-            keys.push_back({stringToByteVector(std::string("try")),10});
+            keys.push_back({std::string("f"),0});
+            keys.push_back({std::string("far"),1});
+            keys.push_back({std::string("fas"),2});
+            keys.push_back({std::string("fast"),3});
+            keys.push_back({std::string("fat"),4});
+            keys.push_back({std::string("s"),5});
+            keys.push_back({std::string("top"),6});
+            keys.push_back({std::string("toy"),7});
+            keys.push_back({std::string("trie"),8});
+            keys.push_back({std::string("trip"),9});
+            keys.push_back({std::string("try"),10});
 
-            SuRF *surf = new SuRF(keys, kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
+            SuRF<std::string,uint64_t> *surf = new SuRF<std::string,uint64_t>(keys, kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen,stringToByteVector);
             bool exist = surf->lookupRange(std::string("top"), false, std::string("toyy"), false).size() > 0;
             ASSERT_TRUE(exist);
             exist = surf->lookupRange(std::string("toq"), false, std::string("toyy"), false).size() > 0;
@@ -45,7 +45,7 @@ namespace surf {
             exist = surf->lookupRange(std::string("trie"), false, std::string("tripp"), false).size() > 0;
             ASSERT_TRUE(exist);
 
-            SuRF::Iter iter = surf->moveToKeyGreaterThan(std::string("t"), true);
+            SuRF<std::string,uint64_t>::Iter iter = surf->moveToKeyGreaterThan(std::string("t"), true);
             ASSERT_TRUE(iter.isValid());
             iter++;
             ASSERT_TRUE(iter.isValid());

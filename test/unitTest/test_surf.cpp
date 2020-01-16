@@ -40,7 +40,7 @@ namespace surf {
 
             void testLookupWord(SuffixType suffix_type);
 
-            SuRF *surf_;
+            SuRF<std::string,uint64_t> *surf_;
             char *data_;
         };
 
@@ -58,28 +58,28 @@ namespace surf {
 
         void SuRFUnitTest::newSuRFWords(SuffixType suffix_type, level_t suffix_len) {
             if (suffix_type == kNone)
-                surf_ = new SuRF(words);
+                surf_ = new SuRF<std::string,uint64_t>(words,stringToByteVector);
             else if (suffix_type == kHash)
-                surf_ = new SuRF(words, kHash, suffix_len, 0);
+                surf_ = new SuRF<std::string,uint64_t>(words, kHash, suffix_len, 0,stringToByteVector);
             else if (suffix_type == kReal)
-                surf_ = new SuRF(words, kIncludeDense, kSparseDenseRatio, kReal, 0, suffix_len);
+                surf_ = new SuRF<std::string,uint64_t>(words, kIncludeDense, kSparseDenseRatio, kReal, 0, suffix_len,stringToByteVector);
             else if (suffix_type == kMixed)
-                surf_ = new SuRF(words, kMixed, suffix_len, suffix_len);
+                surf_ = new SuRF<std::string,uint64_t>(words, kMixed, suffix_len, suffix_len,stringToByteVector);
             else
-                surf_ = new SuRF(words);
+                surf_ = new SuRF<std::string,uint64_t>(words,stringToByteVector);
         }
 
         void SuRFUnitTest::newSuRFInts(SuffixType suffix_type, level_t suffix_len) {
             if (suffix_type == kNone)
-                surf_ = new SuRF(ints_);
+                surf_ = new SuRF<std::string,uint64_t>(ints_,stringToByteVector);
             else if (suffix_type == kHash)
-                surf_ = new SuRF(ints_, kHash, suffix_len, 0);
+                surf_ = new SuRF<std::string,uint64_t>(ints_, kHash, suffix_len, 0,stringToByteVector);
             else if (suffix_type == kReal)
-                surf_ = new SuRF(ints_, kIncludeDense, kSparseDenseRatio, kReal, 0, suffix_len);
+                surf_ = new SuRF<std::string,uint64_t>(ints_, kIncludeDense, kSparseDenseRatio, kReal, 0, suffix_len,stringToByteVector);
             else if (suffix_type == kMixed)
-                surf_ = new SuRF(ints_, kMixed, suffix_len, suffix_len);
+                surf_ = new SuRF<std::string,uint64_t>(ints_, kMixed, suffix_len, suffix_len,stringToByteVector);
             else
-                surf_ = new SuRF(ints_);
+                surf_ = new SuRF<std::string,uint64_t>(ints_,stringToByteVector);
         }
 
         void SuRFUnitTest::testSerialize() {
@@ -87,7 +87,7 @@ namespace surf {
             surf_->destroy();
             delete surf_;
             char *data = data_;
-            surf_ = SuRF::deSerialize(data);
+            surf_ = SuRF<std::string,uint64_t>::deSerialize(data);
         }
 
         void SuRFUnitTest::testLookupWord(SuffixType suffix_type) {
@@ -100,7 +100,7 @@ namespace surf {
 
             for (unsigned i = 0; i < words.size(); i++) {
                 for (unsigned j = 0; j < words_trunc_[i].first.size() && j < words[i].first.size(); j++) {
-                    std::vector<label_t> key = words[i].first;
+                    std::string key = words[i].first;
                     key[j] = 'A';
                     bool key_exist = surf_->lookupKey(key).has_value();
                     ASSERT_FALSE(key_exist);
@@ -161,7 +161,7 @@ namespace surf {
                         if (i == 1)
                             inclusive = false;
                         for (int j = -1; j <= (int) words.size(); j++) {
-                            SuRF::Iter iter;
+                            SuRF<std::string,uint64_t>::Iter iter;
                             if (j < 0)
                                 iter = surf_->moveToFirst();
                             else if (j >= (int) words.size())
@@ -174,18 +174,18 @@ namespace surf {
                             if (j < 0) {
                                 ASSERT_TRUE(iter.isValid());
                                 std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
-                                is_prefix = isEqual(iter_key, words[0].first, iter_key.size(), bitlen);
+                                is_prefix = isEqual(iter_key, stringToByteVector(words[0].first), iter_key.size(), bitlen);
                                 ASSERT_TRUE(is_prefix);
                             } else if (j >= (int) words.size()) {
                                 ASSERT_TRUE(iter.isValid());
                                 std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
-                                is_prefix = isEqual(iter_key, words[words.size() - 1].first, iter_key.size(), bitlen);
+                                is_prefix = isEqual(iter_key, stringToByteVector(words[words.size() - 1].first), iter_key.size(), bitlen);
                                 ASSERT_TRUE(is_prefix);
                             } else if (j == (int) words.size() - 1) {
                                 if (iter.getFpFlag()) {
                                     ASSERT_TRUE(iter.isValid());
                                     std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
-                                    is_prefix = isEqual(iter_key, words[words.size() - 1].first, iter_key.size(), bitlen);
+                                    is_prefix = isEqual(iter_key, stringToByteVector(words[words.size() - 1].first), iter_key.size(), bitlen);
                                     ASSERT_TRUE(is_prefix);
                                 } else {
                                     ASSERT_FALSE(iter.isValid());
@@ -194,9 +194,9 @@ namespace surf {
                                 ASSERT_TRUE(iter.isValid());
                                 std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
                                 if (iter.getFpFlag())
-                                    is_prefix = isEqual(iter_key, words[j].first, iter_key.size(), bitlen);
+                                    is_prefix = isEqual(iter_key, stringToByteVector(words[j].first), iter_key.size(), bitlen);
                                 else
-                                    is_prefix = isEqual(iter_key, words[j + 1].first, iter_key.size(), bitlen);
+                                    is_prefix = isEqual(iter_key, stringToByteVector(words[j + 1].first), iter_key.size(), bitlen);
                                 ASSERT_TRUE(is_prefix);
 
                                 // test getKey()
@@ -249,7 +249,7 @@ namespace surf {
                     if (i == 1)
                         inclusive = false;
                     for (uint64_t j = 0; j < kIntTestSize - 1; j++) {
-                        SuRF::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(j), inclusive);
+                        SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(j), inclusive);
 
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
@@ -262,7 +262,7 @@ namespace surf {
                         ASSERT_TRUE(is_prefix);
                     }
 
-                    SuRF::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - 1), inclusive);
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - 1), inclusive);
                     if (iter.getFpFlag()) {
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
@@ -286,25 +286,25 @@ namespace surf {
                     if (i == 1)
                         inclusive = false;
                     for (unsigned j = 1; j < words.size(); j++) {
-                        SuRF::Iter iter = surf_->moveToKeyLessThan(words[j].first, inclusive);
+                        SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyLessThan(words[j].first, inclusive);
 
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
                         std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
                         bool is_prefix = false;
                         if (iter.getFpFlag())
-                            is_prefix = isEqual(iter_key, words[j].first, iter_key.size(), bitlen);
+                            is_prefix = isEqual(iter_key, stringToByteVector(words[j].first), iter_key.size(), bitlen);
                         else
-                            is_prefix = isEqual(iter_key, words[j - 1].first, iter_key.size(), bitlen);
+                            is_prefix = isEqual(iter_key, stringToByteVector(words[j - 1].first), iter_key.size(), bitlen);
                         ASSERT_TRUE(is_prefix);
                     }
 
-                    SuRF::Iter iter = surf_->moveToKeyLessThan(words[0].first, inclusive);
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyLessThan(words[0].first, inclusive);
                     if (iter.getFpFlag()) {
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
                         std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
-                        bool is_prefix = isEqual(iter_key, words[0].first, iter_key.size(), bitlen);
+                        bool is_prefix = isEqual(iter_key, stringToByteVector(words[0].first), iter_key.size(), bitlen);
                         ASSERT_TRUE(is_prefix);
                     } else {
                         ASSERT_FALSE(iter.isValid());
@@ -323,7 +323,7 @@ namespace surf {
                     if (i == 1)
                         inclusive = false;
                     for (uint64_t j = kIntTestSkip; j < kIntTestSize; j++) {
-                        SuRF::Iter iter = surf_->moveToKeyLessThan(uint64ToString(j), inclusive);
+                        SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyLessThan(uint64ToString(j), inclusive);
 
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
@@ -331,7 +331,7 @@ namespace surf {
                         bool is_prefix = isEqual(iter_key,stringToByteVector(uint64ToString(j - (j % kIntTestSkip))), iter_key.size(), bitlen);
                         ASSERT_TRUE(is_prefix);
                     }
-                    SuRF::Iter iter = surf_->moveToKeyLessThan(uint64ToString(0), inclusive);
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyLessThan(uint64ToString(0), inclusive);
                     if (iter.getFpFlag()) {
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
@@ -353,13 +353,13 @@ namespace surf {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newSuRFWords(kSuffixTypeList[t], kSuffixLenList[k]);
                     bool inclusive = true;
-                    SuRF::Iter iter = surf_->moveToKeyGreaterThan(words[0].first, inclusive);
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyGreaterThan(words[0].first, inclusive);
                     for (unsigned i = 1; i < words.size(); i++) {
                         iter++;
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
                         std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
-                        bool is_prefix = isEqual(iter_key, words[i].first, iter_key.size(), bitlen);
+                        bool is_prefix = isEqual(iter_key, stringToByteVector(words[i].first), iter_key.size(), bitlen);
                         ASSERT_TRUE(is_prefix);
                     }
                     iter++;
@@ -375,7 +375,7 @@ namespace surf {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newSuRFInts(kSuffixTypeList[t], kSuffixLenList[k]);
                     bool inclusive = true;
-                    SuRF::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(0), inclusive);
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(0), inclusive);
                     for (uint64_t i = kIntTestSkip; i < kIntTestSize; i += kIntTestSkip) {
                         iter++;
                         ASSERT_TRUE(iter.isValid());
@@ -397,13 +397,13 @@ namespace surf {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newSuRFWords(kSuffixTypeList[t], kSuffixLenList[k]);
                     bool inclusive = true;
-                    SuRF::Iter iter = surf_->moveToKeyGreaterThan(words[words.size() - 1].first, inclusive);
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyGreaterThan(words[words.size() - 1].first, inclusive);
                     for (int i = words.size() - 2; i >= 0; i--) {
                         iter--;
                         ASSERT_TRUE(iter.isValid());
                         unsigned bitlen;
                         std::vector<label_t> iter_key = iter.getKeyWithSuffix(&bitlen);
-                        bool is_prefix = isEqual(iter_key, words[i].first, iter_key.size(), bitlen);
+                        bool is_prefix = isEqual(iter_key, stringToByteVector(words[i].first), iter_key.size(), bitlen);
                         ASSERT_TRUE(is_prefix);
                     }
                     iter--;
@@ -419,7 +419,7 @@ namespace surf {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newSuRFInts(kSuffixTypeList[t], kSuffixLenList[k]);
                     bool inclusive = true;
-                    SuRF::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - kIntTestSkip),
+                    SuRF<std::string,uint64_t>::Iter iter = surf_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - kIntTestSkip),
                                                                   inclusive);
                     for (uint64_t i = kIntTestSize - 1 - kIntTestSkip; i > 0; i -= kIntTestSkip) {
                         iter--;
@@ -468,16 +468,16 @@ namespace surf {
             for (int k = 0; k < kNumSuffixLen; k++) {
                 newSuRFInts(kMixed, kSuffixLenList[k]);
                 for (uint64_t i = 0; i < kIntTestSize; i++) {
-                    bool exist = surf_->lookupRange(uint64ToByteVector(i), true,
-                                                    uint64ToByteVector(i), true).size() > 0;
+                    bool exist = surf_->lookupRange(uint64ToString(i), true,
+                                                    uint64ToString(i), true).size() > 0;
                     if (i % kIntTestSkip == 0)
                         ASSERT_TRUE(exist);
                     else
                         ASSERT_FALSE(exist);
 
                     for (unsigned j = 1; j < kIntTestSkip + 2; j++) {
-                        exist = surf_->lookupRange(uint64ToByteVector(i), false,
-                                uint64ToByteVector(i + j), true).size() > 0;
+                        exist = surf_->lookupRange(uint64ToString(i), false,
+                                                   uint64ToString(i + j), true).size() > 0;
                         uint64_t left_bound_interval_id = i / kIntTestSkip;
                         uint64_t right_bound_interval_id = (i + j) / kIntTestSkip;
                         if ((i % kIntTestSkip == 0)

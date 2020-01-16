@@ -15,8 +15,12 @@ public:
 	       const surf::SuffixType suffix_type,
                const uint32_t hash_suffix_len, const uint32_t real_suffix_len) {
 	// uses default sparse-dense size ratio
-	filter_ = new surf::SuRF(keys, surf::kIncludeDense, surf::kSparseDenseRatio,
-				 suffix_type, hash_suffix_len, real_suffix_len);
+	std::vector<std::pair<std::string,uint64_t>> keyValues;
+	for (uint64_t i=0; i<keys.size(); i++) {
+	    keyValues.emplace_back(std::make_pair(keys[i],i));
+	}
+	filter_ = new surf::SuRF<std::string,uint64_t>(keyValues, surf::kIncludeDense, surf::kSparseDenseRatio,
+				 suffix_type, hash_suffix_len, real_suffix_len,surf::stringToByteVector);
     }
 
     ~FilterSuRF() {
@@ -38,7 +42,7 @@ public:
     }
 
 private:
-    surf::SuRF* filter_;
+    surf::SuRF<std::string,uint64_t>* filter_;
 };
 
 } // namespace bench

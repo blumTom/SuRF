@@ -47,25 +47,21 @@ int main() {
         randomKeys.emplace_back(generatedKey);
     }
     std::sort(randomKeys.begin(), randomKeys.end(), std::less<uint64_t>());
-
-
-    std::vector<std::pair<uint32_t,uint64_t>> btreePairs;
-    for (int i=0; i<randomKeys.size(); i++) {
-        btreePairs.emplace_back(std::make_pair(randomKeys[i], static_cast<uint64_t>(i+1)));
+    std::vector<std::pair<uint32_t,uint64_t>> randomKeyValues;
+    for (unsigned int i = 0; i < 1000000; i++) {
+        randomKeyValues.emplace_back(std::make_pair(randomKeys[i], i));
     }
+
+
     auto start = std::chrono::system_clock::now();
-    bt.bulk_load(btreePairs.begin(),btreePairs.end());
+    bt.bulk_load(randomKeyValues.begin(),randomKeyValues.end());
     auto end = std::chrono::system_clock::now();
     std::cout << "BTreeSize: " << bt.size() << "\n";
     std::cout << "BTree Build Time:\t" << (end - start).count() << "[microseconds]\n";
 
 
-    std::vector<std::pair<std::vector<label_t>,uint64_t>> surfPairs;
-    for (int i=0; i<randomKeys.size(); i++) {
-        surfPairs.emplace_back(std::make_pair(uint32ToByteVector(randomKeys[i]), static_cast<uint64_t>(i+1)));
-    }
     start = std::chrono::system_clock::now();
-    SuRF *surf = new SuRF(surfPairs, true, 3, surf::kNone, 0, 0);
+    SuRF<uint32_t,uint64_t> *surf = new SuRF<uint32_t,uint64_t>(randomKeyValues, true, 3, surf::kNone, 0, 0, uint32ToByteVector);
     end = std::chrono::system_clock::now();
     std::cout << "SURF Build Time:\t" << (end - start).count() << "[microseconds]\n";
 

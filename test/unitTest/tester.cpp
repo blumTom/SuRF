@@ -2,11 +2,11 @@
 
 #include "testsuite.hpp"
 
-std::vector<std::pair<std::vector<label_t>,uint64_t>> words;
-std::vector<std::pair<std::vector<label_t>,uint64_t>> words_dup;
-std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_;
-std::vector<std::pair<std::vector<label_t>,uint64_t>> words_trunc_;
-std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_trunc_;
+std::vector<std::pair<std::string,uint64_t>> words;
+std::vector<std::pair<std::string,uint64_t>> words_dup;
+std::vector<std::pair<std::string,uint64_t>> ints_;
+std::vector<std::pair<std::string,uint64_t>> words_trunc_;
+std::vector<std::pair<std::string,uint64_t>> ints_trunc_;
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);

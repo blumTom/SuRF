@@ -81,7 +81,7 @@ namespace surf {
 
             for (unsigned i = 0; i < words.size(); i++) {
                 for (unsigned j = 0; j < words_trunc_[i].first.size() && j < words[i].first.size(); j++) {
-                    std::vector<label_t> key = words[i].first;
+                    std::string key = words[i].first;
                     key[j] = 'A';
                     bool key_exist = louds_dense_->lookupKey(key, out_node_num).has_value();
                     ASSERT_FALSE(key_exist);
@@ -90,10 +90,14 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, lookupWordTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    builder_->build(words_bytes);
                     louds_dense_ = new LoudsDense(builder_);
                     testLookupWord();
                     delete builder_;
@@ -117,8 +121,12 @@ namespace surf {
         }*/
 
         TEST_F (DenseUnitTest, lookupIntTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_bytes;
+            for (int i=0; i<ints_.size(); i++) {
+                ints_bytes.emplace_back(std::make_pair(stringToByteVector(ints_[i].first),ints_[i].second));
+            }
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            builder_->build(ints_bytes);
             louds_dense_ = new LoudsDense(builder_);
             position_t out_node_num = 0;
 
@@ -138,10 +146,14 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, moveToKeyGreaterThanWordTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
             for (int t = 0; t < kNumSuffixType; t++) {
                 for (int k = 0; k < kNumSuffixLen; k++) {
                     newBuilder(kSuffixTypeList[t], kSuffixLenList[k]);
-                    builder_->build(words);
+                    builder_->build(words_bytes);
                     louds_dense_ = new LoudsDense(builder_);
 
                     bool inclusive = true;
@@ -157,9 +169,9 @@ namespace surf {
                             std::vector<label_t> iter_key = iter.getKey();
                             bool is_prefix;
                             if (could_be_fp)
-                                is_prefix = isSameKey(iter_key,words[j].first,iter_key.size());
+                                is_prefix = isSameKey(iter_key,stringToByteVector(words[j].first),iter_key.size());
                             else
-                                is_prefix = isSameKey(iter_key,words[j + 1].first,iter_key.size());
+                                is_prefix = isSameKey(iter_key,stringToByteVector(words[j + 1].first),iter_key.size());
                             ASSERT_TRUE(is_prefix);
                         }
 
@@ -167,7 +179,7 @@ namespace surf {
                         bool could_be_fp = louds_dense_->moveToKeyGreaterThan(words[words.size() - 1].first, inclusive, iter);
                         if (could_be_fp) {
                             std::vector<label_t> iter_key = iter.getKey();
-                            bool is_prefix = isSameKey(iter_key,words[words.size() - 1].first,iter_key.size());
+                            bool is_prefix = isSameKey(iter_key,stringToByteVector(words[words.size() - 1].first),iter_key.size());
                             ASSERT_TRUE(is_prefix);
                         } else {
                             ASSERT_FALSE(iter.isValid());
@@ -182,8 +194,13 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, moveToKeyGreaterThanIntTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_bytes;
+            for (int i=0; i<ints_.size(); i++) {
+                ints_bytes.emplace_back(std::make_pair(stringToByteVector(ints_[i].first),ints_[i].second));
+            }
+
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            builder_->build(ints_bytes);
             louds_dense_ = new LoudsDense(builder_);
 
             bool inclusive = true;
@@ -197,8 +214,8 @@ namespace surf {
                     ASSERT_TRUE(iter.isValid());
                     ASSERT_TRUE(iter.isComplete());
                     std::vector<label_t> iter_key = iter.getKey();
-                    std::vector<label_t> int_key_fp = uint64ToByteVector(j - (j % kIntTestSkip));
-                    std::vector<label_t> int_key_true = uint64ToByteVector(j - (j % kIntTestSkip) + kIntTestSkip);
+                    std::vector<label_t> int_key_fp = stringToByteVector(uint64ToString(j - (j % kIntTestSkip)));
+                    std::vector<label_t> int_key_true = stringToByteVector(uint64ToString(j - (j % kIntTestSkip) + kIntTestSkip));
                     bool is_prefix;
                     if (could_be_fp)
                         is_prefix = isSameKey(iter_key,int_key_fp,iter_key.size());
@@ -212,7 +229,7 @@ namespace surf {
                                                                       iter);
                 if (could_be_fp) {
                     std::vector<label_t> iter_key = iter.getKey();
-                    std::vector<label_t> int_key_fp = uint64ToByteVector(kIntTestSize - 1);
+                    std::vector<label_t> int_key_fp = stringToByteVector(uint64ToString(kIntTestSize - 1));
                     bool is_prefix = isSameKey(iter_key,int_key_fp,iter_key.size());
                     ASSERT_TRUE(is_prefix);
                 } else {
@@ -226,8 +243,12 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, IteratorIncrementWordTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
             newBuilder(kReal, 8);
-            builder_->build(words);
+            builder_->build(words_bytes);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -237,7 +258,7 @@ namespace surf {
                 ASSERT_TRUE(iter.isValid());
                 ASSERT_TRUE(iter.isComplete());
                 std::vector<label_t> iter_key = iter.getKey();
-                bool is_prefix = isSameKey(iter_key,words[i].first,iter_key.size());
+                bool is_prefix = isSameKey(iter_key,stringToByteVector(words[i].first),iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
             iter++;
@@ -248,8 +269,12 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, IteratorIncrementIntTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_bytes;
+            for (int i=0; i<ints_.size(); i++) {
+                ints_bytes.emplace_back(std::make_pair(stringToByteVector(ints_[i].first),ints_[i].second));
+            }
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            builder_->build(ints_bytes);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -259,7 +284,7 @@ namespace surf {
                 ASSERT_TRUE(iter.isValid());
                 ASSERT_TRUE(iter.isComplete());
                 std::vector<label_t> iter_key = iter.getKey();
-                std::vector<label_t> int_prefix = uint64ToByteVector(i);
+                std::vector<label_t> int_prefix = stringToByteVector(uint64ToString(i));
                 bool is_prefix = isSameKey(iter_key,int_prefix,iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
@@ -271,8 +296,12 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, IteratorDecrementWordTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
             newBuilder(kReal, 8);
-            builder_->build(words);
+            builder_->build(words_bytes);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -282,7 +311,7 @@ namespace surf {
                 ASSERT_TRUE(iter.isValid());
                 ASSERT_TRUE(iter.isComplete());
                 std::vector<label_t> iter_key = iter.getKey();
-                bool is_prefix = isSameKey(iter_key,words[i].first,iter_key.size());
+                bool is_prefix = isSameKey(iter_key,stringToByteVector(words[i].first),iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }
             iter--;
@@ -293,8 +322,12 @@ namespace surf {
         }
 
         TEST_F (DenseUnitTest, IteratorDecrementIntTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_bytes;
+            for (int i=0; i<ints_.size(); i++) {
+                ints_bytes.emplace_back(std::make_pair(stringToByteVector(ints_[i].first),ints_[i].second));
+            }
             newBuilder(kReal, 8);
-            builder_->build(ints_);
+            builder_->build(ints_bytes);
             louds_dense_ = new LoudsDense(builder_);
             bool inclusive = true;
             LoudsDense::Iter iter(louds_dense_);
@@ -304,7 +337,7 @@ namespace surf {
                 ASSERT_TRUE(iter.isValid());
                 ASSERT_TRUE(iter.isComplete());
                 std::vector<label_t> iter_key = iter.getKey();
-                std::vector<label_t> int_prefix = uint64ToByteVector(i);
+                std::vector<label_t> int_prefix = stringToByteVector(uint64ToString(i));
                 bool is_prefix = isSameKey(iter_key,int_prefix,iter_key.size());
                 ASSERT_TRUE(is_prefix);
             }

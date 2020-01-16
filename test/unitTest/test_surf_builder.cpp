@@ -275,65 +275,101 @@ namespace surf {
         }
 
         TEST_F (SuRFBuilderUnitTest, buildSparseStringTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_trunc_bytes;
+            for (int i=0; i<words_trunc_.size(); i++) {
+                words_trunc_bytes.emplace_back(std::make_pair(stringToByteVector(words_trunc_[i].first),words_trunc_[i].second));
+            }
             bool include_dense = false;
             uint32_t sparse_dense_ratio = 0;
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(words);
-                testSparse(words, words_trunc_);
+                builder_->build(words_bytes);
+                testSparse(words_bytes, words_trunc_bytes);
                 delete builder_;
             }
         }
 
         TEST_F (SuRFBuilderUnitTest, buildSparseDuplicateTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_trunc_bytes;
+            for (int i=0; i<words_trunc_.size(); i++) {
+                words_trunc_bytes.emplace_back(std::make_pair(stringToByteVector(words_trunc_[i].first),words_trunc_[i].second));
+            }
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_dup_bytes;
+            for (int i=0; i<words_dup.size(); i++) {
+                words_dup_bytes.emplace_back(std::make_pair(stringToByteVector(words_dup[i].first),words_dup[i].second));
+            }
             bool include_dense = false;
             uint32_t sparse_dense_ratio = 0;
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(words_dup);
-                testSparse(words, words_trunc_);
+                builder_->build(words_dup_bytes);
+                testSparse(words_bytes, words_trunc_bytes);
                 delete builder_;
             }
         }
 
         TEST_F (SuRFBuilderUnitTest, buildSparseIntTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_bytes;
+            for (int i=0; i<ints_.size(); i++) {
+                ints_bytes.emplace_back(std::make_pair(stringToByteVector(ints_[i].first),ints_[i].second));
+            }
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_trunc_bytes;
+            for (int i=0; i<ints_trunc_.size(); i++) {
+                ints_trunc_bytes.emplace_back(std::make_pair(stringToByteVector(ints_trunc_[i].first),ints_trunc_[i].second));
+            }
             bool include_dense = false;
             uint32_t sparse_dense_ratio = 0;
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(ints_);
-                testSparse(ints_, ints_trunc_);
+                builder_->build(ints_bytes);
+                testSparse(ints_bytes, ints_trunc_bytes);
                 delete builder_;
             }
         }
 
         TEST_F (SuRFBuilderUnitTest, buildDenseStringTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
             bool include_dense = true;
             uint32_t sparse_dense_ratio = 0;
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(words);
+                builder_->build(words_bytes);
                 testDense();
                 delete builder_;
             }
         }
 
         TEST_F (SuRFBuilderUnitTest, buildDenseIntTest) {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> ints_bytes;
+            for (int i=0; i<ints_.size(); i++) {
+                ints_bytes.emplace_back(std::make_pair(stringToByteVector(ints_[i].first),ints_[i].second));
+            }
             bool include_dense = true;
             uint32_t sparse_dense_ratio = 0;
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
                 builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
-                builder_->build(ints_);
+                builder_->build(ints_bytes);
                 testDense();
                 delete builder_;
             }

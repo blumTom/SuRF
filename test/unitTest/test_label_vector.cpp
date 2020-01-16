@@ -43,7 +43,11 @@ namespace surf {
         };
 
         void LabelVectorUnitTest::setupWordsTest() {
-            builder_->build(words);
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
+            builder_->build(words_bytes);
             labels_ = new LabelVector(builder_->getLabels());
         }
 

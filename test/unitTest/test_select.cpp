@@ -48,8 +48,12 @@ namespace surf {
         };
 
         void SelectUnitTest::setupWordsTest() {
+            std::vector<std::pair<std::vector<label_t>,uint64_t>> words_bytes;
+            for (int i=0; i<words.size(); i++) {
+                words_bytes.emplace_back(std::make_pair(stringToByteVector(words[i].first),words[i].second));
+            }
             std::vector<std::pair<std::vector<label_t>,uint64_t>> keys;
-            builder_->build(words);
+            builder_->build(words_bytes);
             for (level_t level = 0; level < builder_->getTreeHeight(); level++)
                 num_items_per_level_.push_back(builder_->getLabels()[level].size());
             for (level_t level = 0; level < num_items_per_level_.size(); level++)

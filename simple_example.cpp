@@ -6,12 +6,14 @@
 using namespace surf;
 
 int main() {
-    std::vector<std::string> keys = {
-            "f",
-            "far",
-            "fast",
-            "toy",
-            "trie",
+    std::vector<std::pair<std::string,uint64_t>> keys = {
+            std::make_pair("f",1),
+            std::make_pair("far",2),
+            std::make_pair("fast",3),
+            std::make_pair("s",4),
+            std::make_pair("top",5),
+            std::make_pair("toy",6),
+            std::make_pair("trie",7),
     };
 
     /*
@@ -64,22 +66,24 @@ int main() {
               << "!\n";
     std::cout << "\n";*/
 
-    SuRF *surf = new SuRF(keys);
+    std::function<std::vector<label_t>(const std::string&)> keyDerivator = [](const std::string& key) { return stringToByteVector(key); };
+
+    SuRF<std::string,uint64_t> *surf = new SuRF<std::string,uint64_t>(keys,keyDerivator);
     std::cout << "Memory Usage: " << surf->getMemoryUsage() << " Bytes\n";
 
     // use default dense-to-sparse ratio; specify suffix type and length
-    SuRF *surf_hash = new SuRF(keys, surf::kHash, 8, 0);
-    SuRF *surf_real = new SuRF(keys, surf::kReal, 0, 8);
+    SuRF<std::string,uint64_t> *surf_hash = new SuRF<std::string,uint64_t>(keys, surf::kHash, 8, 0,keyDerivator);
+    SuRF<std::string,uint64_t> *surf_real = new SuRF<std::string,uint64_t>(keys, surf::kReal, 0, 8,keyDerivator);
 
     // customize dense-to-sparse ratio; specify suffix type and length
-    SuRF *surf_mixed = new SuRF(keys, true, 16, surf::kMixed, 4, 4);
+    SuRF<std::string,uint64_t> *surf_mixed = new SuRF<std::string,uint64_t>(keys, true, 16, surf::kMixed, 4, 4,keyDerivator);
 
     //----------------------------------------
     // point queries
     //----------------------------------------
     std::cout << "Point Query Example: fase" << std::endl;
 
-    std::string key = "trie";
+    std::string key = "fase";
 
     std::optional<uint64_t> result = surf->lookupKey(key);
     if (result.has_value())
