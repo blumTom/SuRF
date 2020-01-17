@@ -21,7 +21,7 @@ namespace surf {
                 bool include_dense = false;
                 uint32_t sparse_dense_ratio = 0;
                 level_t suffix_len = 8;
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 data_ = nullptr;
                 data2_ = nullptr;
                 num_items_ = 0;
@@ -43,7 +43,7 @@ namespace surf {
 
             static const position_t kRankBasicBlockSize = 512;
 
-            SuRFBuilder *builder_;
+            SuRFBuilder<uint64_t> *builder_;
             BitvectorRank *bv_;
             BitvectorRank *bv2_;
             std::vector<position_t> num_items_per_level_;
@@ -117,11 +117,11 @@ namespace surf {
             position_t bv_pos = 0;
             for (level_t level = 0; level < builder_->getTreeHeight(); level++) {
                 for (position_t pos = 0; pos < num_items_per_level_[level]; pos++) {
-                    bool expected_bit = SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], pos);
+                    bool expected_bit = SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], pos);
                     bool bv_bit = bv_->readBit(bv_pos);
                     ASSERT_EQ(expected_bit, bv_bit);
 
-                    expected_bit = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                    expected_bit = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                     bv_bit = bv2_->readBit(bv_pos);
                     ASSERT_EQ(expected_bit, bv_bit);
 

@@ -33,7 +33,7 @@ namespace surf {
 
             void printSparseNode(level_t level, position_t pos);
 
-            SuRFBuilder *builder_;
+            SuRFBuilder<uint64_t> *builder_;
         };
 
         void printIndent(level_t level) {
@@ -48,7 +48,7 @@ namespace surf {
             // print labels
             printIndent(level);
             for (position_t i = 0; i < kFanout; i++) {
-                if (SuRFBuilder::readBit(builder_->getBitmapLabels()[level], node_num * kFanout + i)) {
+                if (SuRFBuilder<uint64_t>::readBit(builder_->getBitmapLabels()[level], node_num * kFanout + i)) {
                     if ((i >= 65 && i <= 90) || (i >= 97 && i <= 122))
                         std::cout << (char) i << " ";
                     else
@@ -60,8 +60,8 @@ namespace surf {
             // print child indicator bitmap
             printIndent(level);
             for (position_t i = 0; i < kFanout; i++) {
-                if (SuRFBuilder::readBit(builder_->getBitmapLabels()[level], node_num * kFanout + i)) {
-                    if (SuRFBuilder::readBit(builder_->getBitmapChildIndicatorBits()[level], node_num * kFanout + i))
+                if (SuRFBuilder<uint64_t>::readBit(builder_->getBitmapLabels()[level], node_num * kFanout + i)) {
+                    if (SuRFBuilder<uint64_t>::readBit(builder_->getBitmapChildIndicatorBits()[level], node_num * kFanout + i))
                         std::cout << "1 ";
                     else
                         std::cout << "0 ";
@@ -71,7 +71,7 @@ namespace surf {
 
             // print prefixkey indicator
             printIndent(level);
-            if (SuRFBuilder::readBit(builder_->getPrefixkeyIndicatorBits()[level], node_num))
+            if (SuRFBuilder<uint64_t>::readBit(builder_->getPrefixkeyIndicatorBits()[level], node_num))
                 std::cout << "1 ";
             else
                 std::cout << "0 ";
@@ -94,7 +94,7 @@ namespace surf {
                 else
                     std::cout << (int16_t) label << " ";
                 pos++;
-                is_end_of_node = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                is_end_of_node = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
             }
             std::cout << "\n";
 
@@ -103,13 +103,13 @@ namespace surf {
             is_end_of_node = false;
             pos = start_pos;
             while (!is_end_of_node && pos < builder_->getLabels()[level].size()) {
-                bool has_child = SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], pos);
+                bool has_child = SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], pos);
                 if (has_child)
                     std::cout << "1 ";
                 else
                     std::cout << "0 ";
                 pos++;
-                is_end_of_node = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                is_end_of_node = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
             }
             std::cout << "\n";
 
@@ -118,13 +118,13 @@ namespace surf {
             is_end_of_node = false;
             pos = start_pos;
             while (!is_end_of_node && pos < builder_->getLabels()[level].size()) {
-                bool louds_bit = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                bool louds_bit = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                 if (louds_bit)
                     std::cout << "1 ";
                 else
                     std::cout << "0 ";
                 pos++;
-                is_end_of_node = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                is_end_of_node = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
             }
             std::cout << "\n";
         }
@@ -160,14 +160,14 @@ namespace surf {
                     ASSERT_TRUE(exist_in_node);
 
                     // child indicator test
-                    bool has_child = SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], pos);
+                    bool has_child = SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], pos);
                     bool same_prefix_in_prev_key = DoesPrefixMatchInTrunc(keys_trunc, i - 1, i, level + 1);
                     bool same_prefix_in_next_key = DoesPrefixMatchInTrunc(keys_trunc, i, i + 1, level + 1);
                     bool expected_has_child = same_prefix_in_prev_key || same_prefix_in_next_key;
                     ASSERT_EQ(expected_has_child, has_child);
 
                     // LOUDS bit test
-                    bool louds_bit = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                    bool louds_bit = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                     bool expected_louds_bit = !DoesPrefixMatchInTrunc(keys_trunc, i - 1, i, level);
                     if (pos == 0)
                         ASSERT_TRUE(louds_bit);
@@ -186,14 +186,14 @@ namespace surf {
                                 bool expected_suffix_bit = false;
                                 if (level + 1 + byte_id < keys[i].first.size())
                                     expected_suffix_bit = (bool) (keys[i].first[level + 1 + byte_id] & byte_mask);
-                                bool stored_suffix_bit = SuRFBuilder::readBit(builder_->getSuffixes()[level],
+                                bool stored_suffix_bit = SuRFBuilder<uint64_t>::readBit(builder_->getSuffixes()[level],
                                                                               suffix_bitpos);
                                 ASSERT_EQ(expected_suffix_bit, stored_suffix_bit);
                                 suffix_bitpos++;
                             }
                         } else {
                             for (position_t bitpos = 0; bitpos < suffix_len; bitpos++) {
-                                bool stored_suffix_bit = SuRFBuilder::readBit(builder_->getSuffixes()[level],
+                                bool stored_suffix_bit = SuRFBuilder<uint64_t>::readBit(builder_->getSuffixes()[level],
                                                                               suffix_bitpos);
                                 ASSERT_FALSE(stored_suffix_bit);
                                 suffix_bitpos++;
@@ -210,20 +210,20 @@ namespace surf {
 
                 label_t prev_label = 0;
                 for (unsigned i = 0; i < builder_->getLabels()[level].size(); i++) {
-                    bool is_node_start = SuRFBuilder::readBit(builder_->getLoudsBits()[level], i);
+                    bool is_node_start = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], i);
                     if (is_node_start)
                         node_num++;
 
                     label_t label = builder_->getLabels()[level][i];
-                    bool exist_in_node = SuRFBuilder::readBit(builder_->getBitmapLabels()[level],
+                    bool exist_in_node = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapLabels()[level],
                                                               node_num * kFanout + label);
-                    bool has_child_sparse = SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], i);
-                    bool has_child_dense = SuRFBuilder::readBit(builder_->getBitmapChildIndicatorBits()[level],
+                    bool has_child_sparse = SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], i);
+                    bool has_child_dense = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapChildIndicatorBits()[level],
                                                                 node_num * kFanout + label);
 
                     // prefixkey indicator test
                     if (is_node_start) {
-                        bool prefixkey_indicator = SuRFBuilder::readBit(builder_->getPrefixkeyIndicatorBits()[level],
+                        bool prefixkey_indicator = SuRFBuilder<uint64_t>::readBit(builder_->getPrefixkeyIndicatorBits()[level],
                                                                         node_num);
                         if ((label == kTerminator) && !has_child_sparse)
                             ASSERT_TRUE(prefixkey_indicator);
@@ -243,28 +243,28 @@ namespace surf {
                     if (is_node_start) {
                         if (node_num > 0) {
                             for (unsigned c = prev_label + 1; c < kFanout; c++) {
-                                exist_in_node = SuRFBuilder::readBit(builder_->getBitmapLabels()[level],
+                                exist_in_node = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapLabels()[level],
                                                                      (node_num - 1) * kFanout + c);
                                 ASSERT_FALSE(exist_in_node);
-                                has_child_dense = SuRFBuilder::readBit(builder_->getBitmapChildIndicatorBits()[level],
+                                has_child_dense = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapChildIndicatorBits()[level],
                                                                        (node_num - 1) * kFanout + c);
                                 ASSERT_FALSE(has_child_dense);
                             }
                         }
                         for (unsigned c = 0; c < (unsigned) label; c++) {
-                            exist_in_node = SuRFBuilder::readBit(builder_->getBitmapLabels()[level],
+                            exist_in_node = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapLabels()[level],
                                                                  node_num * kFanout + c);
                             ASSERT_FALSE(exist_in_node);
-                            has_child_dense = SuRFBuilder::readBit(builder_->getBitmapChildIndicatorBits()[level],
+                            has_child_dense = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapChildIndicatorBits()[level],
                                                                    node_num * kFanout + c);
                             ASSERT_FALSE(has_child_dense);
                         }
                     } else {
                         for (unsigned c = prev_label + 1; c < (unsigned) label; c++) {
-                            exist_in_node = SuRFBuilder::readBit(builder_->getBitmapLabels()[level],
+                            exist_in_node = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapLabels()[level],
                                                                  node_num * kFanout + c);
                             ASSERT_FALSE(exist_in_node);
-                            has_child_dense = SuRFBuilder::readBit(builder_->getBitmapChildIndicatorBits()[level],
+                            has_child_dense = SuRFBuilder<uint64_t>::readBit(builder_->getBitmapChildIndicatorBits()[level],
                                                                    node_num * kFanout + c);
                             ASSERT_FALSE(has_child_dense);
                         }
@@ -288,7 +288,7 @@ namespace surf {
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 builder_->build(words_bytes);
                 testSparse(words_bytes, words_trunc_bytes);
                 delete builder_;
@@ -313,7 +313,7 @@ namespace surf {
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 builder_->build(words_dup_bytes);
                 testSparse(words_bytes, words_trunc_bytes);
                 delete builder_;
@@ -334,7 +334,7 @@ namespace surf {
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 builder_->build(ints_bytes);
                 testSparse(ints_bytes, ints_trunc_bytes);
                 delete builder_;
@@ -351,7 +351,7 @@ namespace surf {
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 builder_->build(words_bytes);
                 testDense();
                 delete builder_;
@@ -368,7 +368,7 @@ namespace surf {
             level_t suffix_len_array[5] = {1, 3, 7, 8, 13};
             for (int i = 0; i < 5; i++) {
                 level_t suffix_len = suffix_len_array[i];
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 builder_->build(ints_bytes);
                 testDense();
                 delete builder_;

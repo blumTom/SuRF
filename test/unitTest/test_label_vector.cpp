@@ -21,7 +21,7 @@ namespace surf {
                 bool include_dense = false;
                 uint32_t sparse_dense_ratio = 0;
                 level_t suffix_len = 8;
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 data_ = nullptr;
             }
 
@@ -37,7 +37,7 @@ namespace surf {
 
             void testSearch();
 
-            SuRFBuilder *builder_;
+            SuRFBuilder<uint64_t> *builder_;
             LabelVector *labels_;
             char *data_;
         };
@@ -78,7 +78,7 @@ namespace surf {
             position_t search_len = 0;
             for (level_t level = 0; level < builder_->getTreeHeight(); level++) {
                 for (position_t pos = 0; pos < builder_->getLabels()[level].size(); pos++) {
-                    bool louds_bit = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                    bool louds_bit = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                     if (louds_bit) {
                         position_t search_pos;
                         bool search_success;
@@ -129,7 +129,7 @@ namespace surf {
             position_t search_len = 0;
             for (level_t level = 0; level < builder_->getTreeHeight(); level++) {
                 for (position_t pos = 0; pos < builder_->getLabels()[level].size(); pos++) {
-                    bool louds_bit = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                    bool louds_bit = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                     if (louds_bit) {
                         position_t binary_search_pos, simd_search_pos, linear_search_pos;
                         bool binary_search_success, simd_search_success, linear_search_success;
@@ -183,7 +183,7 @@ namespace surf {
                     }
 
                     if (builder_->getLabels()[level][pos] == kTerminator
-                        && !SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], pos))
+                        && !SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], pos))
                         start_pos++;
                     else
                         search_len++;
@@ -212,7 +212,7 @@ namespace surf {
             position_t search_len = 0;
             for (level_t level = 0; level < builder_->getTreeHeight(); level++) {
                 for (position_t pos = 0; pos < builder_->getLabels()[level].size(); pos++) {
-                    bool louds_bit = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                    bool louds_bit = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                     if (louds_bit) {
                         position_t search_pos;
                         position_t terminator_offset = 0;

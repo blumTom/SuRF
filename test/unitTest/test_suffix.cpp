@@ -33,7 +33,7 @@ namespace surf {
 
             void testCheckEquality();
 
-            SuRFBuilder *builder_;
+            SuRFBuilder<uint64_t> *builder_;
             BitvectorSuffix *suffixes_;
             std::vector<std::vector<std::pair<std::string,uint64_t>>> words_by_suffix_start_level_;
             char *data_;
@@ -171,11 +171,11 @@ namespace surf {
                     level_t suffix_len = suffix_len_array[j];
 
                     if (i == 0)
-                        builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, suffix_len, 0);
+                        builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, suffix_type, suffix_len, 0);
                     else if (i == 1)
-                        builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, 0, suffix_len);
+                        builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, suffix_type, 0, suffix_len);
                     else
-                        builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio,
+                        builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio,
                                                    suffix_type, suffix_len, suffix_len);
                     builder_->build(words_bytes);
 
@@ -222,11 +222,11 @@ namespace surf {
                     SuffixType suffix_type = suffix_type_array[i];
                     level_t suffix_len = suffix_len_array[j];
                     if (i == 0)
-                        builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, suffix_len, 0);
+                        builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, suffix_type, suffix_len, 0);
                     else if (i == 1)
-                        builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, 0, suffix_len);
+                        builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, suffix_type, 0, suffix_len);
                     else
-                        builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio,
+                        builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio,
                                                    suffix_type, suffix_len, suffix_len);
                     builder_->build(words_bytes);
 

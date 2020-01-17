@@ -21,7 +21,7 @@ namespace surf {
                 bool include_dense = true;
                 uint32_t sparse_dense_ratio = 0;
                 level_t suffix_len = 8;
-                builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(include_dense, sparse_dense_ratio, kReal, 0, suffix_len);
                 num_items_ = 0;
             }
 
@@ -36,7 +36,7 @@ namespace surf {
 
             void setupWordsTest();
 
-            SuRFBuilder *builder_;
+            SuRFBuilder<uint64_t> *builder_;
             Bitvector *bv_; // sparse: child indicator bits
             Bitvector *bv2_; // sparse: louds bits
             Bitvector *bv3_; // dense: label bitmap
@@ -77,12 +77,12 @@ namespace surf {
             for (level_t level = 0; level < builder_->getTreeHeight(); level++) {
                 for (position_t pos = 0; pos < num_items_per_level_[level]; pos++) {
                     // bv test
-                    bool has_child = SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], pos);
+                    bool has_child = SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], pos);
                     bool bv_bit = bv_->readBit(bv_pos);
                     ASSERT_EQ(has_child, bv_bit);
 
                     // bv2 test
-                    bool is_node_start = SuRFBuilder::readBit(builder_->getLoudsBits()[level], pos);
+                    bool is_node_start = SuRFBuilder<uint64_t>::readBit(builder_->getLoudsBits()[level], pos);
                     bv_bit = bv2_->readBit(bv_pos);
                     ASSERT_EQ(is_node_start, bv_bit);
 
@@ -95,7 +95,7 @@ namespace surf {
                     bool is_terminator = false;
                     if (is_node_start) {
                         is_terminator = (builder_->getLabels()[level][pos] == kTerminator)
-                                        && !SuRFBuilder::readBit(builder_->getChildIndicatorBits()[level], pos);
+                                        && !SuRFBuilder<uint64_t>::readBit(builder_->getChildIndicatorBits()[level], pos);
                         bv_bit = bv5_->readBit(bv5_pos);
                         ASSERT_EQ(is_terminator, bv_bit);
                         bv5_pos++;

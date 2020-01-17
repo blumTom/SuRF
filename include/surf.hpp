@@ -19,8 +19,8 @@ namespace surf {
             Iter() {};
 
             Iter(const SuRF *filter) {
-                dense_iter_ = LoudsDense::Iter(filter->louds_dense_);
-                sparse_iter_ = LoudsSparse::Iter(filter->louds_sparse_);
+                dense_iter_ = typename LoudsDense<Value>::Iter(filter->louds_dense_);
+                sparse_iter_ = typename LoudsSparse<Value>::Iter(filter->louds_sparse_);
                 could_be_fp_ = false;
             }
 
@@ -67,7 +67,7 @@ namespace surf {
                 return sparse_iter_.getSuffix(suffix);
             }
 
-            uint64_t getValue() const {
+            Value getValue() const {
                 if (!isValid())
                     return 0;
                 if (dense_iter_.isComplete())
@@ -162,8 +162,8 @@ namespace surf {
 
         private:
             // true implies that dense_iter_ is valid
-            LoudsDense::Iter dense_iter_;
-            LoudsSparse::Iter sparse_iter_;
+            typename LoudsDense<Value>::Iter dense_iter_;
+            typename LoudsSparse<Value>::Iter sparse_iter_;
             bool could_be_fp_;
 
             friend class SuRF;
@@ -176,9 +176,9 @@ namespace surf {
         // Input keys must be SORTED
         //------------------------------------------------------------------
 
-        SuRF(std::vector<std::pair<Key,uint64_t>> &keys, const std::function<std::vector<label_t>(const Key&)> keyDerivator) {
+        SuRF(std::vector<std::pair<Key,Value>> &keys, const std::function<std::vector<label_t>(const Key&)> keyDerivator) {
             keyDerivator_ = keyDerivator;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyBytes;
+            std::vector<std::pair<std::vector<label_t>,Value>> keyBytes;
 
             for (int i=0; i<keys.size(); i++) {
                 keyBytes.emplace_back(std::make_pair(keyDerivator(keys[i].first),keys[i].second));
@@ -187,13 +187,13 @@ namespace surf {
             create(keyBytes, kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
         }
 
-        SuRF(std::vector<std::pair<Key,uint64_t>> &keys,
+        SuRF(std::vector<std::pair<Key,Value>> &keys,
              const SuffixType suffix_type,
              const level_t hash_suffix_len,
              const level_t real_suffix_len,
              const std::function<std::vector<label_t>(const Key&)> keyDerivator) {
             keyDerivator_ = keyDerivator;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyBytes;
+            std::vector<std::pair<std::vector<label_t>,Value>> keyBytes;
 
             for (int i=0; i<keys.size(); i++) {
                 keyBytes.emplace_back(std::make_pair(keyDerivator(keys[i].first),keys[i].second));
@@ -202,7 +202,7 @@ namespace surf {
             create(keyBytes, kIncludeDense, kSparseDenseRatio, suffix_type, hash_suffix_len, real_suffix_len);
         }
 
-        SuRF(std::vector<std::pair<Key,uint64_t>> &keys,
+        SuRF(std::vector<std::pair<Key,Value>> &keys,
              const bool include_dense,
              const uint32_t sparse_dense_ratio,
              const SuffixType suffix_type,
@@ -210,7 +210,7 @@ namespace surf {
              const level_t real_suffix_len,
              const std::function<std::vector<label_t>(const Key&)> keyDerivator) {
             keyDerivator_ = keyDerivator;
-            std::vector<std::pair<std::vector<label_t>,uint64_t>> keyBytes;
+            std::vector<std::pair<std::vector<label_t>,Value>> keyBytes;
 
             for (int i=0; i<keys.size(); i++) {
                 keyBytes.emplace_back(std::make_pair(keyDerivator(keys[i].first),keys[i].second));
@@ -221,13 +221,13 @@ namespace surf {
 
         ~SuRF() {}
 
-        void create(const std::vector<std::pair<std::vector<label_t>,uint64_t>> &keys,
+        void create(const std::vector<std::pair<std::vector<label_t>,Value>> &keys,
                     const bool include_dense,
                     const uint32_t sparse_dense_ratio,
                     const SuffixType suffix_type,
                     const level_t hash_suffix_len,
                     const level_t real_suffix_len) {
-            builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
+            builder_ = new SuRFBuilder<Value>(include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
             builder_->build(keys);
             values_ = builder_->getValues();
             louds_dense_ = new LoudsDense(builder_);
@@ -236,7 +236,7 @@ namespace surf {
             delete builder_;
         }
 
-        std::optional<uint64_t> lookupKey(const Key &key) const {
+        std::optional<Value> lookupKey(const Key &key) const {
             return lookupKey(keyDerivator_(key));
         }
 
@@ -325,14 +325,14 @@ namespace surf {
             return iter;
         }
 
-        std::vector<uint64_t> lookupRange(const Key &left_key,
+        std::vector<Value> lookupRange(const Key &left_key,
                          const bool left_inclusive,
                          const Key &right_key,
                          const bool right_inclusive) {
 
             iter_.clear();
             louds_dense_->moveToKeyGreaterThan(keyDerivator_(left_key), left_inclusive, iter_.dense_iter_);
-            if (!iter_.dense_iter_.isValid()) return std::vector<uint64_t>(0);
+            if (!iter_.dense_iter_.isValid()) return std::vector<Value>(0);
             if (!iter_.dense_iter_.isComplete()) {
                 if (!iter_.dense_iter_.isSearchComplete()) {
                     iter_.passToSparse();
@@ -347,14 +347,14 @@ namespace surf {
             }
 
 
-            std::vector<uint64_t> resultSet = std::vector<uint64_t>(0);
+            std::vector<Value> resultSet = std::vector<Value>(0);
             for (; iter_.isValid(); iter_++) {
                 int compare = iter_.compare(keyDerivator_(right_key));
 
                 if (compare == kCouldBePositive ||
                     (right_inclusive && (compare <= 0)) ||
                     (!right_inclusive && (compare < 0))) {
-                    uint64_t value = iter_.getValue();
+                    Value value = iter_.getValue();
                     resultSet.emplace_back(value);
                 }
             }
@@ -372,7 +372,7 @@ namespace surf {
             for (int i=0; i<values_->size(); i++) {
                 valuesCount += (*values_)[i].size();
             }
-            return (sizeof(SuRF) + valuesCount * sizeof(uint64_t) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
+            return (sizeof(SuRF) + valuesCount * sizeof(Value) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
         }
 
         level_t getHeight() const {
@@ -395,8 +395,8 @@ namespace surf {
 
         static SuRF *deSerialize(char *src) {
             SuRF *surf = new SuRF();
-            surf->louds_dense_ = LoudsDense::deSerialize(src);
-            surf->louds_sparse_ = LoudsSparse::deSerialize(src);
+            surf->louds_dense_ = LoudsDense<Value>::deSerialize(src);
+            surf->louds_sparse_ = LoudsSparse<Value>::deSerialize(src);
             surf->iter_ = SuRF::Iter(surf);
             return surf;
         }
@@ -407,9 +407,9 @@ namespace surf {
         }
 
     private:
-        std::optional<uint64_t> lookupKey(const std::vector<label_t> &key) const {
+        std::optional<Value> lookupKey(const std::vector<label_t> &key) const {
             position_t connect_node_num = 0;
-            std::optional<uint64_t> result = std::nullopt;
+            std::optional<Value> result = std::nullopt;
 
 
             result = louds_dense_->lookupKey(key, connect_node_num);
@@ -421,14 +421,14 @@ namespace surf {
         }
 
     private:
-        LoudsDense *louds_dense_;
-        LoudsSparse *louds_sparse_;
-        SuRFBuilder *builder_;
+        LoudsDense<Value> *louds_dense_;
+        LoudsSparse<Value> *louds_sparse_;
+        SuRFBuilder<Value> *builder_;
         SuRF::Iter iter_;
 
         std::function<std::vector<label_t>(const Key&)> keyDerivator_;
 
-        shared_ptr<std::vector<std::vector<uint64_t>>> values_;
+        shared_ptr<std::vector<std::vector<Value>>> values_;
     };
 
 } // namespace surf

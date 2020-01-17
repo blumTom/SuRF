@@ -39,10 +39,10 @@ namespace surf {
             keys.push_back({stringToByteVector(std::string("trip")),9});
             keys.push_back({stringToByteVector(std::string("try")),10});
 
-            SuRFBuilder *builder = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
+            SuRFBuilder<uint64_t> *builder = new SuRFBuilder<uint64_t>(kIncludeDense, kSparseDenseRatio, kSuffixType, 0, kSuffixLen);
             builder->build(keys);
-            LoudsSparse *louds_sparse = new LoudsSparse(builder);
-            LoudsSparse::Iter iter(louds_sparse);
+            LoudsSparse<uint64_t> *louds_sparse = new LoudsSparse(builder);
+            LoudsSparse<uint64_t>::Iter iter(louds_sparse);
 
             louds_sparse->moveToKeyGreaterThan(std::string("to"), true, iter);
             ASSERT_TRUE(iter.isValid());

@@ -39,32 +39,32 @@ namespace surf {
 
             void testLookupWord();
 
-            SuRFBuilder *builder_;
-            LoudsSparse *louds_sparse_;
+            SuRFBuilder<uint64_t> *builder_;
+            LoudsSparse<uint64_t> *louds_sparse_;
             char *data_;
         };
 
         void SparseUnitTest::newBuilder(SuffixType suffix_type, level_t suffix_len) {
             if (suffix_type == kNone)
-                builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
+                builder_ = new SuRFBuilder<uint64_t>(kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
             else if (suffix_type == kHash)
-                builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kHash, suffix_len, 0);
+                builder_ = new SuRFBuilder<uint64_t>(kIncludeDense, kSparseDenseRatio, kHash, suffix_len, 0);
             else if (suffix_type == kReal)
-                builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kReal, 0, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(kIncludeDense, kSparseDenseRatio, kReal, 0, suffix_len);
             else if (suffix_type == kMixed)
-                builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kMixed, suffix_len, suffix_len);
+                builder_ = new SuRFBuilder<uint64_t>(kIncludeDense, kSparseDenseRatio, kMixed, suffix_len, suffix_len);
             else
-                builder_ = new SuRFBuilder(kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
+                builder_ = new SuRFBuilder<uint64_t>(kIncludeDense, kSparseDenseRatio, kNone, 0, 0);
         }
 
         void SparseUnitTest::testSerialize() {
             uint64_t size = louds_sparse_->serializedSize();
             data_ = new char[size];
-            LoudsSparse *ori_louds_sparse = louds_sparse_;
+            LoudsSparse<uint64_t> *ori_louds_sparse = louds_sparse_;
             char *data = data_;
             ori_louds_sparse->serialize(data);
             data = data_;
-            louds_sparse_ = LoudsSparse::deSerialize(data);
+            louds_sparse_ = LoudsSparse<uint64_t>::deSerialize(data);
 
             ASSERT_EQ(ori_louds_sparse->getHeight(), louds_sparse_->getHeight());
             ASSERT_EQ(ori_louds_sparse->getStartLevel(), louds_sparse_->getStartLevel());
@@ -161,7 +161,7 @@ namespace surf {
                         if (i == 1)
                             inclusive = false;
                         for (unsigned j = 0; j < words.size() - 1; j++) {
-                            LoudsSparse::Iter iter(louds_sparse_);
+                            LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
                             bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(words[j].first, inclusive, iter);
 
                             ASSERT_TRUE(iter.isValid());
@@ -174,7 +174,7 @@ namespace surf {
                             ASSERT_TRUE(is_prefix);
                         }
 
-                        LoudsSparse::Iter iter(louds_sparse_);
+                        LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
                         bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(words[words.size() - 1].first, inclusive,
                                                                                iter);
                         if (could_be_fp) {
@@ -207,7 +207,7 @@ namespace surf {
                 if (i == 1)
                     inclusive = false;
                 for (uint64_t j = 0; j < kIntTestSize - 1; j++) {
-                    LoudsSparse::Iter iter(louds_sparse_);
+                    LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
                     bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(uint64ToString(j), inclusive, iter);
 
                     ASSERT_TRUE(iter.isValid());
@@ -222,7 +222,7 @@ namespace surf {
                     ASSERT_TRUE(is_prefix);
                 }
 
-                LoudsSparse::Iter iter(louds_sparse_);
+                LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
                 bool could_be_fp = louds_sparse_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - 1), inclusive,
                                                                        iter);
                 if (could_be_fp) {
@@ -249,7 +249,7 @@ namespace surf {
             builder_->build(words_bytes);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
-            LoudsSparse::Iter iter(louds_sparse_);
+            LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
             louds_sparse_->moveToKeyGreaterThan(words[0].first, inclusive, iter);
             for (unsigned i = 1; i < words.size(); i++) {
                 iter++;
@@ -274,7 +274,7 @@ namespace surf {
             builder_->build(ints_bytes);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
-            LoudsSparse::Iter iter(louds_sparse_);
+            LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
             louds_sparse_->moveToKeyGreaterThan(uint64ToString(0), inclusive, iter);
             for (uint64_t i = kIntTestSkip; i < kIntTestSize; i += kIntTestSkip) {
                 iter++;
@@ -299,7 +299,7 @@ namespace surf {
             builder_->build(words_bytes);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
-            LoudsSparse::Iter iter(louds_sparse_);
+            LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
             louds_sparse_->moveToKeyGreaterThan(words[words.size() - 1].first, inclusive, iter);
             for (int i = words.size() - 2; i >= 0; i--) {
                 iter--;
@@ -324,7 +324,7 @@ namespace surf {
             builder_->build(ints_bytes);
             louds_sparse_ = new LoudsSparse(builder_);
             bool inclusive = true;
-            LoudsSparse::Iter iter(louds_sparse_);
+            LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
             louds_sparse_->moveToKeyGreaterThan(uint64ToString(kIntTestSize - kIntTestSkip), inclusive, iter);
             for (uint64_t i = kIntTestSize - 1 - kIntTestSkip; i > 0; i -= kIntTestSkip) {
                 iter--;
@@ -349,7 +349,7 @@ namespace surf {
             newBuilder(kReal, 8);
             builder_->build(words_bytes);
             louds_sparse_ = new LoudsSparse(builder_);
-            LoudsSparse::Iter iter(louds_sparse_);
+            LoudsSparse<uint64_t>::Iter iter(louds_sparse_);
             iter.setToFirstLabelInRoot();
             iter.moveToLeftMostKey();
             std::vector<label_t> iter_key = iter.getKey();
