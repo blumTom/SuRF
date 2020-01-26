@@ -36,7 +36,7 @@ int main() {
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint32_t> dis;
 
-    int generatedKeys = 25000000;
+    int generatedKeys = 20000000;
     std::vector<uint32_t> randomKeys;
     for (unsigned int i = 0; i < generatedKeys; i++) {
         uint32_t generatedKey = dis(gen);
@@ -72,7 +72,7 @@ int main() {
                 traits_nodebug<unsigned int> >
                 btree_type;
         btree_type bt;
-        shared_ptr<SuRF> surf;
+        SuRF<uint32_t,uint64_t>* surf;
 
 
         BenchmarkParameters params;
@@ -88,12 +88,13 @@ int main() {
 
         params.setParam("name","build_surf");
         {
-            std::vector<std::pair<std::vector<label_t>,uint64_t >> insertKeys;
+            std::vector<std::pair<uint32_t,uint64_t >> insertKeys;
             for (int i=0; i<insertedKeysCount; i++) {
-                insertKeys.emplace_back(std::make_pair(uint32ToByteVector(randomKeys[i]), static_cast<uint64_t>(i+1)));
+                insertKeys.emplace_back(std::make_pair(randomKeys[i], static_cast<uint64_t>(i+1)));
             }
             PerfEventBlock e(1, params, false);
-            surf = std::make_shared<SuRF>(insertKeys, true, 3, surf::kNone, 0, 0);
+
+            surf = new SuRF<uint32_t,uint64_t>(insertKeys, true, 3, surf::kNone, 0, 0,uint32ToByteVector);
         }
 
         params.setParam("name","lookup_perf");
@@ -123,7 +124,39 @@ int main() {
             }
         }
 
-        params.setParam("name","lookup_perf_zipfian");
+        params.setParam("name","insert_btree");
+        int inserts_count = 1;
+        {
+            std::vector<uint32_t> lookupKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                lookupKeys.emplace_back(dis(gen));
+            }
+            PerfEventBlock e(inserts_count, params, false);
+
+            for (size_t i = 0; i < inserts_count; i++) {
+                bt.insert2(lookupKeys[i],i);
+                //bt.find(lookupKeys[i])->second;
+            }
+        }
+
+
+        params.setParam("name","insert_surf");
+        {
+            std::vector<std::pair<uint32_t,uint64_t>> lookupKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                lookupKeys.emplace_back(std::make_pair(dis(gen),i+insertedKeysCount));
+            }
+
+            std::function<std::vector<label_t>(const uint64_t)> keyFromValueDerivator = [&lookupKeys](const uint64_t& value) { return uint32ToByteVector(lookupKeys[value].first); };
+
+            PerfEventBlock e(inserts_count, params, false);
+
+            for (size_t i = 0; i < inserts_count; i++) {
+                surf->insert(lookupKeys[i].first,lookupKeys[i].second,keyFromValueDerivator);
+            }
+        }
+
+        /*params.setParam("name","lookup_perf_zipfian");
         {
             std::vector<uint32_t> lookupKeys;
             for (int i=0; i<insertedKeysCount; i++) {
@@ -147,7 +180,7 @@ int main() {
             for (size_t i = 0; i < queries_count; i++) {
                 surf->lookupKey(lookupKeys[i]);
             }
-        }
+        }*/
 
         surf->destroy();
 

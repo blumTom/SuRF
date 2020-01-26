@@ -221,7 +221,7 @@ namespace surf {
         }
 
         ~SuRF() {
-            delete values_;
+            //delete[] values_;
         }
 
         void create(const std::vector<std::pair<std::vector<label_t>,Value>> &keys,
@@ -369,14 +369,14 @@ namespace surf {
             position_t connect_node_num = 0;
             bool result = true;
 
-            label_t previouslabel;
-            word_t previoussuffix;
+            label_t previouslabel = 0;
+            word_t previoussuffix = 0;
             Value previousValue;
             position_t previousNodeNum = 0;
             position_t addedNodes = 0;
             position_t addedChilds = 0;
 
-            int denseResult = louds_dense_->insert(stringToByteVector(key), value, connect_node_num, previouslabel, previoussuffix, previousValue, previousNodeNum, addedNodes, addedChilds,keyDerivator);
+            int denseResult = louds_dense_->insert(keyDerivator_(key), value, connect_node_num, previouslabel, previoussuffix, previousValue, previousNodeNum, addedNodes, addedChilds,keyDerivator);
 
             switch (denseResult) {
                 case -1:
@@ -384,10 +384,10 @@ namespace surf {
                 case 0:
                     return true;
                 case 1:
-                    result = louds_sparse_->insert(stringToByteVector(key), value, connect_node_num,keyDerivator);
+                    result = louds_sparse_->insert(keyDerivator_(key), value, connect_node_num,keyDerivator);
                     break;
                 case 2:
-                    result = louds_sparse_->insert(stringToByteVector(key), value, connect_node_num,previouslabel,previoussuffix,previousValue, previousNodeNum, addedNodes, addedChilds,keyDerivator);
+                    result = louds_sparse_->insert(keyDerivator_(key), value, connect_node_num,previouslabel,previoussuffix,previousValue, previousNodeNum, addedNodes, addedChilds,keyDerivator);
                     break;
             }
 
@@ -436,6 +436,7 @@ namespace surf {
         void destroy() {
             louds_dense_->destroy();
             louds_sparse_->destroy();
+            delete values_;
         }
 
     private:
