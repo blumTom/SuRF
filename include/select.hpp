@@ -119,6 +119,12 @@ public:
 	delete[] select_lut_;
     }
 
+    void update() {
+        num_ones_ = 0;
+        delete[] select_lut_ ;
+        initSelectLut();
+    }
+
 private:
     // This function currently assumes that the first bit in the
     // bitvector is one.

@@ -53,6 +53,12 @@ public:
     position_t distanceToNextSetBit(const position_t pos) const;
     position_t distanceToPrevSetBit(const position_t pos) const;
 
+    void insert(const position_t idx, bool isSet);
+    void insertWords(const position_t pos, const int count);
+
+    void setBit(const position_t pos);
+    void unsetBit(const position_t pos);
+
 private:
     position_t totalNumBits(const std::vector<position_t>& num_bits_per_level, 
 			    const level_t start_level, 

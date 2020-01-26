@@ -325,6 +325,10 @@ namespace surf {
         LoudsDense() {}
 
         LoudsDense(const SuRFBuilder<Value> *builder) {
+            suffix_type_ = builder->getSuffixType();
+            hash_suffix_len_ = builder->getHashSuffixLen();
+            real_suffix_len_ = builder->getRealSuffixLen();
+
             values_ = builder->getValues();
 
             height_ = builder->getSparseStartLevel();
@@ -380,8 +384,6 @@ namespace surf {
                 }
                 pos += (label_t) key[level];
 
-                //child_indicator_bitmaps_->prefetch(pos);
-
                 if (!label_bitmaps_->readBit(pos)) { //if key byte does not exist
                     return std::nullopt;
                 }
@@ -403,6 +405,123 @@ namespace surf {
 
         std::optional<uint64_t> lookupKey(const std::string &key, position_t &out_node_num) const {
             return lookupKey(stringToByteVector(key), out_node_num);
+        }
+
+        int insert(const std::vector<label_t> &key, const Value& value, position_t &out_node_num, label_t &previouslabel, word_t &previoussuffix, Value &previousValue, position_t &previousNodeNum, position_t &addedNodes, position_t &addedChilds, const std::function<std::vector<label_t>(const Value&)> keyDerivator) const {
+            int returnCode = 1;
+
+            position_t node_num = 0;
+            position_t pos = 0;
+            for (level_t level = 0; level < height_; level++) {
+                pos = (node_num * kNodeFanout);
+                if (level >= key.size()) { //if run out of searchKey bytes
+                    if (prefixkey_indicator_bits_->readBit(node_num)) { //if the prefix is also a key
+                        return -1;
+                    } else {
+                        prefixkey_indicator_bits_->setBit(node_num);
+                        prefixkey_indicator_bits_->update();
+                        word_t insert_suffix = suffixes_->constructSuffix(suffix_type_, key, hash_suffix_len_, level + 1, real_suffix_len_);
+                        suffixes_->insertSuffix(getSuffixPos(pos,true),insert_suffix);
+                        insertValue(level,getSuffixPos(pos,true),value);
+                        return 0;
+                    }
+                }
+
+                pos += (label_t) key[level];
+
+                if (!label_bitmaps_->readBit(pos)) { //if key byte does not exist
+                    label_bitmaps_->setBit(pos);
+                    label_bitmaps_->update();
+                    child_indicator_bitmaps_->unsetBit(pos);
+                    child_indicator_bitmaps_->update();
+                    word_t insert_suffix = suffixes_->constructSuffix(suffix_type_, key, hash_suffix_len_, level + 1, real_suffix_len_);
+                    suffixes_->insertSuffix(getSuffixPos(pos,false),insert_suffix);
+                    insertValue(level,getSuffixPos(pos,false),value);
+
+                    return 0;
+                }
+
+                if (!child_indicator_bitmaps_->readBit(pos)) { //if trie branch terminates
+                    position_t suffixPos = getSuffixPos(pos,false);
+                    Value compareValue = getValue(level, suffixPos);
+                    std::vector<label_t> compareKey = keyDerivator(compareValue);
+                    suffixes_->removeSuffix(suffixPos);
+                    removeValue(level,suffixPos);
+
+                    child_indicator_bitmaps_->setBit(pos);
+                    child_indicator_bitmaps_->update();
+
+                    if (level >= height_ - 1) {
+                        if (level < compareKey.size() - 1) {
+                            previouslabel = compareKey[level + 1];
+                            previoussuffix = suffixes_->constructSuffix(suffix_type_, compareKey, hash_suffix_len_, level + 2, real_suffix_len_);
+                            previousValue = compareValue;
+                            if (level < key.size() - 1 && compareKey[level+1] < key[level + 1]) previousNodeNum--;
+                            addedChilds++;
+                        } else {
+                            previouslabel = kTerminator;
+                            previoussuffix = suffixes_->constructSuffix(suffix_type_, compareKey, hash_suffix_len_, level + 1, real_suffix_len_);
+                            previousValue = compareValue;
+                            addedChilds++;
+                        }
+                        returnCode = 2;
+                    } else {
+                        position_t nextnodenum = getChildNodeNum(pos);
+                        position_t nextpos = (nextnodenum * kNodeFanout);
+                        label_bitmaps_->insertWords(nextpos, 4);
+                        label_bitmaps_->update();
+                        child_indicator_bitmaps_->insertWords(nextpos, 4);
+                        child_indicator_bitmaps_->update();
+                        prefixkey_indicator_bits_->insert(nextpos,false);
+                        prefixkey_indicator_bits_->insert(nextpos,false);
+                        prefixkey_indicator_bits_->insert(nextpos,false);
+                        prefixkey_indicator_bits_->insert(nextpos,false);
+                        prefixkey_indicator_bits_->update();
+                        nextpos += compareKey[level + 1];
+                        if (level < compareKey.size() - 1) {
+                            label_bitmaps_->setBit(nextpos);
+                            label_bitmaps_->update();
+                            word_t compareSuffix = suffixes_->constructSuffix(suffix_type_, compareKey, hash_suffix_len_, level + 1, real_suffix_len_);
+                            suffixes_->insertSuffix(getSuffixPos(nextpos,false),compareSuffix);
+                            insertValue(level + 1,getSuffixPos(nextpos,false),compareValue);
+                        } else {
+                            prefixkey_indicator_bits_->setBit(nextnodenum);
+                            prefixkey_indicator_bits_->update();
+                            word_t compareSuffix = previoussuffix = suffixes_->constructSuffix(suffix_type_, compareKey, hash_suffix_len_, level + 1, real_suffix_len_);
+                            suffixes_->insertSuffix(getSuffixPos(nextpos,false),compareSuffix);
+                            insertValue(level + 1,getSuffixPos(nextpos,false),compareValue);
+                        }
+                        addedNodes++;
+                        addedChilds++;
+                    }
+                }
+
+                node_num = getChildNodeNum(pos);
+            }
+            //search will continue in LoudsSparse
+            out_node_num = node_num;
+            return returnCode;
+        }
+
+        void insertValue(level_t level, position_t pos, const Value& value) const {
+            if (values_->size() <= level) (*values_).emplace_back(std::vector<Value>(0));
+            int diff = 0;
+            for (int i=0;i<level; i++) {
+                diff += (*values_)[i].size();
+            }
+            pos -= diff;
+            assert((*values_)[level].size() > pos);
+            (*values_)[level].insert((*values_)[level].begin() + pos,value);
+        }
+
+        void removeValue(level_t level, position_t pos) const {
+            int diff = 0;
+            for (int i=0;i<level; i++) {
+                diff += (*values_)[i].size();
+            }
+            pos -= diff;
+            assert((*values_)[level].size() > pos);
+            (*values_)[level].erase((*values_)[level].begin() + pos);
         }
 
         // return value indicates potential false positive
@@ -568,6 +687,10 @@ namespace surf {
         BitvectorSuffix *suffixes_;
 
         shared_ptr<std::vector<std::vector<Value>>> values_;
+
+        SuffixType suffix_type_;
+        level_t hash_suffix_len_;
+        level_t real_suffix_len_;
     };
 
 } //namespace surf

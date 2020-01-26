@@ -362,6 +362,35 @@ namespace surf {
             return resultSet;
         }
 
+        bool insert(const Key &key, const Value &value, const std::function<std::vector<label_t>(const Value&)> keyDerivator) {
+            position_t connect_node_num = 0;
+            bool result = true;
+
+            label_t previouslabel;
+            word_t previoussuffix;
+            Value previousValue;
+            position_t previousNodeNum = 0;
+            position_t addedNodes = 0;
+            position_t addedChilds = 0;
+
+            int denseResult = louds_dense_->insert(stringToByteVector(key), value, connect_node_num, previouslabel, previoussuffix, previousValue, previousNodeNum, addedNodes, addedChilds,keyDerivator);
+
+            switch (denseResult) {
+                case -1:
+                    return false;
+                case 0:
+                    return true;
+                case 1:
+                    result = louds_sparse_->insert(stringToByteVector(key), value, connect_node_num,keyDerivator);
+                    break;
+                case 2:
+                    result = louds_sparse_->insert(stringToByteVector(key), value, connect_node_num,previouslabel,previoussuffix,previousValue, previousNodeNum, addedNodes, addedChilds,keyDerivator);
+                    break;
+            }
+
+            return result;
+        }
+
         uint64_t serializedSize() const {
             return (louds_dense_->serializedSize()
                     + louds_sparse_->serializedSize());

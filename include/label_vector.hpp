@@ -72,6 +72,16 @@ namespace surf {
 
         bool linearSearchGreaterThan(const label_t target, position_t &pos, const position_t search_len) const;
 
+        void insert(position_t pos, label_t newlabel) {
+            label_t *newlabels_ = (label_t*) malloc(sizeof(label_t) * (num_bytes_ + 1));
+            memcpy(newlabels_,labels_,pos);
+            newlabels_[pos] = newlabel;
+            memcpy(newlabels_ + pos + 1, labels_ + pos, num_bytes_ - pos);
+            delete labels_;
+            labels_ = newlabels_;
+            num_bytes_ += 1;
+        }
+
         void serialize(char *&dst) const {
             memcpy(dst, &num_bytes_, sizeof(num_bytes_));
             dst += sizeof(num_bytes_);

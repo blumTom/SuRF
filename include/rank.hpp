@@ -90,6 +90,11 @@ public:
 	delete[] rank_lut_;
     }
 
+    void update() {
+        delete[] rank_lut_;
+        initRankLut();
+    }
+
 private:
     void initRankLut() {
         position_t word_per_basic_block = basic_block_size_ / kWordSize;

@@ -44,6 +44,75 @@ namespace surf {
         return (stored_suffix == querying_suffix);
     }
 
+    void BitvectorSuffix::insertSuffix(const position_t idx, word_t &suffix) {
+        if (type_ == kNone) return;
+
+        level_t suffix_len = getSuffixLen();
+        if (idx * suffix_len > num_bits_) return;
+
+        position_t bit_pos = idx * suffix_len;
+        position_t word_id = bit_pos / kWordSize;
+        position_t offset = bit_pos & (kWordSize - 1);
+
+        position_t freeBits = numWords() * sizeof(word_t) * 8 - num_bits_;
+
+        if (suffix_len > freeBits) {
+            word_t* newbits_ = (word_t*) malloc(numWords() + 1);
+            for (int i=0; i<numWords(); i++) {
+                newbits_[i] = bits_[i];
+            }
+            newbits_[numWords()] = 0;
+            delete bits_;
+            bits_ = newbits_;
+        }
+
+        word_t bitsToCopy = (bits_[word_id] << (64 - suffix_len));
+        bits_[word_id] >>= suffix_len;
+        word_t bitsAfterNewSuffix = bits_[word_id] & (0xFFFFFFFFFFFFFFFF >> (offset + suffix_len));
+        bits_[word_id] >>= 64 - offset - suffix_len;
+        bits_[word_id] <<= suffix_len;
+        bits_[word_id] += suffix;
+        bits_[word_id] <<= 64 - offset - suffix_len;
+        bits_[word_id] += bitsAfterNewSuffix;
+
+        num_bits_ += (position_t) suffix_len;
+
+        for (int i=word_id + 1; i<numWords(); i++) {
+            word_t nextBitsToCopy = (bits_[i] << (64 - suffix_len));
+            bits_[i] >>= suffix_len;
+            bits_[i] = bits_[i] | bitsToCopy;
+            bitsToCopy = nextBitsToCopy;
+        }
+    }
+
+    void BitvectorSuffix::removeSuffix(const position_t idx) {
+        if (type_ == kNone) return;
+
+        level_t suffix_len = getSuffixLen();
+        if (idx * suffix_len >= num_bits_) return;
+
+        position_t bit_pos = idx * suffix_len;
+        position_t word_id = bit_pos / kWordSize;
+        position_t offset = bit_pos & (kWordSize - 1);
+
+        word_t bitsToCopy = 0;
+        for (int i=numWords() - 1; i>word_id; i--) {
+            word_t nextBitsToCopy = (bits_[i] >> (64 - suffix_len));
+            bits_[i] <<= suffix_len;
+            bits_[i] += bitsToCopy;
+            bitsToCopy = nextBitsToCopy;
+        }
+
+        word_t bitsAfterNewSuffix = bits_[word_id] & (0xFFFFFFFFFFFFFFFF >> (suffix_len + offset));
+        bits_[word_id] >>= 64 - offset;
+        bits_[word_id] <<= 64 - offset - suffix_len;
+        bits_[word_id] += bitsAfterNewSuffix;
+        bits_[word_id] <<= suffix_len;
+        bits_[word_id] += bitsToCopy;
+
+        num_bits_ -= (position_t) suffix_len;
+    }
+
 // If no real suffix is stored for the key, compare returns 0.
 // int BitvectorSuffix::compare(const position_t idx,
 // 			     const std::string& key, const level_t level) const {

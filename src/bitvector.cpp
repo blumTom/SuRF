@@ -9,6 +9,86 @@ namespace surf {
         return bits_[word_id] & (kMsbMask >> offset);
     }
 
+    void Bitvector::setBit(const position_t pos) {
+        if (pos >= num_bits_) return;
+
+        position_t word_id = pos / kWordSize;
+        position_t offset = pos & (kWordSize - 1);
+
+        bits_[word_id] |= (0x8000000000000000 >> offset);
+    }
+
+    void Bitvector::unsetBit(const position_t pos) {
+        if (pos >= num_bits_) return;
+
+        position_t word_id = pos / kWordSize;
+        position_t offset = pos & (kWordSize - 1);
+
+        bits_[word_id] &= 0xFFFFFFFFFFFFFFFF ^ (0x8000000000000000 >> offset);
+    }
+
+    void Bitvector::insert(const position_t pos, bool isSet) {
+        if (pos > num_bits_) return;
+
+        position_t bit_pos = pos;
+        position_t word_id = bit_pos / kWordSize;
+        position_t offset = bit_pos & (kWordSize - 1);
+
+        position_t freeBits = numWords() * sizeof(word_t) * 8 - num_bits_;
+
+        if (freeBits == 0) {
+            word_t* newbits_ = (word_t*) malloc(numWords() + 1);
+            for (int i=0; i<numWords(); i++) {
+                newbits_[i] = bits_[i];
+            }
+            newbits_[numWords()] = 0;
+            delete bits_;
+            bits_ = newbits_;
+        }
+
+        word_t bitsToCopy = (bits_[word_id] << (64 - 1));
+        bits_[word_id] >>= 1;
+        word_t bitsAfterNewSuffix = bits_[word_id] & (0xFFFFFFFFFFFFFFFF >> (offset + 1));
+        bits_[word_id] >>= 64 - offset - 1;
+        bits_[word_id] <<= 1;
+        if (isSet) bits_[word_id] += 1;
+        bits_[word_id] <<= 64 - offset - 1;
+        bits_[word_id] += bitsAfterNewSuffix;
+
+        num_bits_ += (position_t) 1;
+
+        for (int i=word_id + 1; i<numWords(); i++) {
+            word_t nextBitsToCopy = (bits_[i] << (64 - 1));
+            bits_[i] >>= 1;
+            bits_[i] = bits_[i] | bitsToCopy;
+            bitsToCopy = nextBitsToCopy;
+        }
+    }
+
+    void Bitvector::insertWords(const position_t pos, const int count) {
+        if (pos > num_bits_) return;
+
+        position_t bit_pos = pos;
+        position_t word_id = bit_pos / kWordSize;
+
+        int bytecount = count * sizeof(word_t);
+
+        word_t* newbits_ = new word_t[numWords() + count];
+        for (int i=0; i<word_id; i++) {
+            newbits_[i] = bits_[i];
+        }
+        for (int i=0; i<word_id; i++) {
+            newbits_[word_id + i] = 0;
+        }
+        for (int i=word_id; i<numWords(); i++) {
+            newbits_[i + count] = bits_[i];
+        }
+        delete bits_;
+        bits_ = newbits_;
+
+        num_bits_ += (position_t) bytecount * 8;
+    }
+
     position_t Bitvector::distanceToNextSetBit(const position_t pos) const {
         assert(pos < num_bits_);
         position_t distance = 1;

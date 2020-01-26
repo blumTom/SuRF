@@ -133,6 +133,10 @@ namespace surf {
 
         bool checkEquality(const position_t idx, const std::vector<label_t> &key, const level_t level) const;
 
+        void insertSuffix(const position_t idx, word_t &suffix);
+
+        void removeSuffix(const position_t idx);
+
         // Compare stored suffix to querying suffix.
         // kReal suffix type only.
         int compare(const position_t idx, const std::vector<label_t> &key, const level_t level) const;
