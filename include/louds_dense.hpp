@@ -686,7 +686,7 @@ namespace surf {
         BitvectorRank *prefixkey_indicator_bits_; //1 bit per internal node
         BitvectorSuffix *suffixes_;
 
-        shared_ptr<std::vector<std::vector<Value>>> values_;
+        std::vector<std::vector<Value>>* values_;
 
         SuffixType suffix_type_;
         level_t hash_suffix_len_;

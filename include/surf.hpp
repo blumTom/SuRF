@@ -219,7 +219,9 @@ namespace surf {
             create(keyBytes, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
         }
 
-        ~SuRF() {}
+        ~SuRF() {
+            delete values_;
+        }
 
         void create(const std::vector<std::pair<std::vector<label_t>,Value>> &keys,
                     const bool include_dense,
@@ -457,7 +459,7 @@ namespace surf {
 
         std::function<std::vector<label_t>(const Key&)> keyDerivator_;
 
-        shared_ptr<std::vector<std::vector<Value>>> values_;
+        std::vector<std::vector<Value>>* values_;
     };
 
 } // namespace surf

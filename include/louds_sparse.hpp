@@ -719,7 +719,7 @@ namespace surf {
         BitvectorSelect *louds_bits_;
         BitvectorSuffix *suffixes_;
 
-        shared_ptr<std::vector<std::vector<Value>>> values_;
+        std::vector<std::vector<Value>>* values_;
 
         SuffixType suffix_type_;
         level_t hash_suffix_len_;
