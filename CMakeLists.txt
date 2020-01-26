@@ -14,8 +14,8 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -Wall -Wno-unused-value -Wno-unused-function -mpopcnt -pthread -std=c++17")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror -Wno-unused-value -Wno-overflow -Wno-sign-compare -Wno-unused-function -mpopcnt -pthread -std=c++17")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -Wall -Wno-unused-variable -Wno-unused-value -Wno-unused-function -mpopcnt -pthread -std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror -Wno-unused-variable -Wno-unused-value -Wno-overflow -Wno-sign-compare -Wno-unused-function -mpopcnt -pthread -std=c++17")
 
 option(COVERALLS "Generate coveralls data" OFF)
 

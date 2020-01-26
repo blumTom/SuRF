@@ -3,6 +3,7 @@
 
 #include <string>
 #include <algorithm>
+#include <functional>
 
 #include "config.hpp"
 #include "label_vector.hpp"

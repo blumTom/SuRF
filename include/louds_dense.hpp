@@ -3,6 +3,7 @@
 
 #include <string>
 #include <algorithm>
+#include <functional>
 
 #include "config.hpp"
 #include "rank.hpp"

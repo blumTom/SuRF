@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <optional>
+#include <functional>
 
 #include "config.hpp"
 #include "louds_dense.hpp"
@@ -400,9 +401,9 @@ namespace surf {
 
         uint64_t getMemoryUsage() const {
             size_t valuesCount = 0;
-            for (int i=0; i<values_->size(); i++) {
+            /*for (int i=0; i<values_->size(); i++) {
                 valuesCount += (*values_)[i].size();
-            }
+            }*/
             return (sizeof(SuRF) + valuesCount * sizeof(Value) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
         }
 
