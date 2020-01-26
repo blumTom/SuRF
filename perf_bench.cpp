@@ -5,6 +5,8 @@
 #include "include/surf.hpp"
 #include "tlx/tlx/container.hpp"
 
+#include "bench/bench.hpp"
+
 using namespace surf;
 
 
@@ -18,12 +20,23 @@ struct traits_nodebug : tlx::btree_default_traits<KeyType, KeyType> {
 };
 
 int main() {
+    const std::string path = "../../evaluation/";
+    std::ofstream build_file(path + "instructions.csv", std::ofstream::trunc);
+    std::ofstream lookup_file(path + "cycles.csv", std::ofstream::trunc);
+    std::ofstream llcmisses_file(path + "LLC-misses.csv", std::ofstream::trunc);
+    build_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";surf_size" << ";btree_lookup_zipfian" << ";surf_lookup_zipfian" << std::endl;
+    lookup_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";surf_size" << ";btree_lookup_zipfian" << ";surf_lookup_zipfian" << std::endl;
+    llcmisses_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";surf_size" << ";btree_lookup_zipfian" << ";surf_lookup_zipfian" << std::endl;
+    build_file = std::ofstream(path + "instructions.csv", std::ofstream::app);
+    lookup_file = std::ofstream(path + "cycles.csv", std::ofstream::app);
+    llcmisses_file = std::ofstream(path + "LLC-misses.csv", std::ofstream::app);
+
     //Create uniformly distributed random keys
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint32_t> dis;
 
-    int generatedKeys = 15000000;
+    int generatedKeys = 25000000;
     std::vector<uint32_t> randomKeys;
     for (unsigned int i = 0; i < generatedKeys; i++) {
         uint32_t generatedKey = dis(gen);
@@ -32,17 +45,26 @@ int main() {
     std::sort(randomKeys.begin(), randomKeys.end(), std::less<uint64_t>());
 
 
-    int step = 500000;
-    {
-        BenchmarkParameters params;
-        //params.setParam("name","Headline  ");
-        PerfEventBlock e(1, params, true);
-    }
+    //Load zipfian distributed random keys
+    std::string txn_file = "../bench/workloads/txn_";
+    txn_file += "randint";
+    txn_file += "_";
+    txn_file += "zipfian";
+    std::vector<std::string> txn_keys;
+    bench::loadKeysFromFile(txn_file, true, txn_keys);
+
+    std::cout << "TXN_Keys: " << txn_keys.size() << "\n";
+
+
+    int step = 100000;
     for (int insertedKeysCount = step; insertedKeysCount<generatedKeys; insertedKeysCount = insertedKeysCount + step) {
         std::cout << "insertedKeysCount: " << insertedKeysCount << "\n";
-
-        BenchmarkParameters params;
-        //params.setParam("name","Build surf");
+        build_file << insertedKeysCount;
+        lookup_file << insertedKeysCount;
+        llcmisses_file << insertedKeysCount;
+        build_file.flush();
+        lookup_file.flush();
+        llcmisses_file.flush();
 
         typedef tlx::btree_multimap<uint32_t,
                 uint64_t,
@@ -50,18 +72,31 @@ int main() {
                 traits_nodebug<unsigned int> >
                 btree_type;
         btree_type bt;
+        shared_ptr<SuRF> surf;
+
+
+        BenchmarkParameters params;
+        params.setParam("name","build_perf");
         {
-            std::vector<uint32_t> insertKeys;
+            std::vector<std::pair<uint32_t,uint64_t>> insertKeys;
             for (int i=0; i<insertedKeysCount; i++) {
-                insertKeys.emplace_back(randomKeys[i]);
+                insertKeys.emplace_back(std::make_pair(randomKeys[i], static_cast<uint64_t>(i+1)));
             }
             PerfEventBlock e(1, params, false);
-            for (uint64_t i=0; i<randomKeys.size(); i++) {
-                bt.insert2(randomKeys[i],i+1);
-            }
+            bt.bulk_load(insertKeys.begin(),insertKeys.end());
         }
 
-        //params.setParam("name","Lookup UD");
+        params.setParam("name","build_surf");
+        {
+            std::vector<std::pair<std::vector<label_t>,uint64_t >> insertKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                insertKeys.emplace_back(std::make_pair(uint32ToByteVector(randomKeys[i]), static_cast<uint64_t>(i+1)));
+            }
+            PerfEventBlock e(1, params, false);
+            surf = std::make_shared<SuRF>(insertKeys, true, 3, surf::kNone, 0, 0);
+        }
+
+        params.setParam("name","lookup_perf");
         int queries_count = 1000;
         {
             std::vector<uint32_t> lookupKeys;
@@ -74,24 +109,8 @@ int main() {
                 bt.find(lookupKeys[i])->second;
             }
         }
-    }
-    for (int insertedKeysCount = step; insertedKeysCount<generatedKeys; insertedKeysCount = insertedKeysCount + step) {
-        std::cout << "insertedKeysCount: " << insertedKeysCount << "\n";
 
-        BenchmarkParameters params;
-        //params.setParam("name","Build surf");
-        SuRF *surf;
-        {
-            std::vector<uint32_t> insertKeys;
-            for (int i=0; i<insertedKeysCount; i++) {
-                insertKeys.emplace_back(randomKeys[i]);
-            }
-            PerfEventBlock e(1, params, false);
-            surf = new SuRF(insertKeys, true, 3, surf::kNone, 0, 0);
-        }
-
-        //params.setParam("name","Lookup UD");
-        int queries_count = 1000;
+        params.setParam("name","lookup_surf");
         {
             std::vector<uint32_t> lookupKeys;
             for (int i=0; i<insertedKeysCount; i++) {
@@ -103,5 +122,44 @@ int main() {
                 surf->lookupKey(lookupKeys[i]);
             }
         }
+
+        params.setParam("name","lookup_perf_zipfian");
+        {
+            std::vector<uint32_t> lookupKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                lookupKeys.emplace_back(stringToUint32(txn_keys[i]));
+            }
+            PerfEventBlock e(queries_count, params, false);
+
+            for (size_t i = 0; i < queries_count; i++) {
+                bt.find(lookupKeys[i])->second;
+            }
+        }
+
+        params.setParam("name","lookup_surf");
+        {
+            std::vector<uint32_t> lookupKeys;
+            for (int i=0; i<insertedKeysCount; i++) {
+                lookupKeys.emplace_back(stringToUint32(txn_keys[i]));
+            }
+            PerfEventBlock e(queries_count, params, false);
+
+            for (size_t i = 0; i < queries_count; i++) {
+                surf->lookupKey(lookupKeys[i]);
+            }
+        }
+
+        surf->destroy();
+
+        build_file << ";" << surf->getMemoryUsage() << std::endl;
+        lookup_file << ";" << surf->getMemoryUsage() << std::endl;
+        llcmisses_file << ";" << surf->getMemoryUsage() << std::endl;
     }
+
+    build_file.flush();
+    build_file.close();
+    lookup_file.flush();
+    lookup_file.close();
+    llcmisses_file.flush();
+    llcmisses_file.close();
 }
