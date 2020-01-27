@@ -5,6 +5,3 @@
 [submodule "tlx"]
 	path = tlx
 	url = https://github.com/tlx/tlx.git
-[submodule "perfevent"]
-	path = perfevent
-	url = https://github.com/viktorleis/perfevent.git
