@@ -31,6 +31,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>
@@ -156,9 +157,19 @@ struct PerfEvent {
 
    static void printCounter(std::ostream& headerOut, std::ostream& dataOut, std::string name, std::string counterValue,bool addComma=true) {
      auto width=std::max(name.length(),counterValue.length());
-     headerOut << std::setw(width) << name << (addComma ? "," : "") << " ";
-     dataOut << std::setw(width) << counterValue << (addComma ? "," : "") << " ";
+     headerOut << std::setw(width) << name << (addComma ? ";" : "") << " ";
+     dataOut << std::setw(width) << counterValue << (addComma ? ";" : "") << " ";
    }
+
+    static void logCounter(std::string name, std::string counterValue) {
+       if (name == "cycles" || name == "instructions" || name == "LLC-misses" || name == "IPC") {
+           std::string path = "../../evaluation/";
+           std::ofstream outfile(path + name + ".csv", std::ofstream::app);
+           outfile << ";" << counterValue;
+           outfile.flush();
+           outfile.close();
+       }
+    }
 
    template <typename T>
    static void printCounter(std::ostream& headerOut, std::ostream& dataOut, std::string name, T counterValue,bool addComma=true) {
@@ -166,6 +177,13 @@ struct PerfEvent {
      stream << std::fixed << std::setprecision(2) << counterValue;
      PerfEvent::printCounter(headerOut,dataOut,name,stream.str(),addComma);
    }
+
+    template <typename T>
+    static void logCounter(std::string name, T counterValue) {
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << counterValue;
+        PerfEvent::logCounter(name,stream.str());
+    }
 
    void printReport(std::ostream& out, uint64_t normalizationConstant) {
      std::stringstream header;
@@ -191,6 +209,24 @@ struct PerfEvent {
       printCounter(headerOut,dataOut,"CPUs",getCPUs());
       printCounter(headerOut,dataOut,"GHz",getGHz(),false);
    }
+
+    void logReport(std::ostream& headerOut, std::ostream& dataOut, uint64_t normalizationConstant) {
+        if (!events.size())
+            return;
+
+        // print all metrics
+        for (unsigned i=0; i<events.size(); i++) {
+            if (names[i].compare("name") == 0) continue;
+            logCounter(names[i],events[i].readCounter()/normalizationConstant);
+        }
+
+        logCounter("scale",normalizationConstant);
+
+        // derived metrics
+        logCounter("IPC",getIPC());
+        logCounter("CPUs",getCPUs());
+        logCounter("GHz",getGHz());
+    }
 };
 
 struct BenchmarkParameters {
@@ -219,7 +255,6 @@ struct BenchmarkParameters {
       setParam("name",name);
   }
 
-  private:
   std::map<std::string,std::string> params;
 };
 
@@ -240,11 +275,15 @@ struct PerfEventBlock {
      e.stopCounters();
      std::stringstream header;
      std::stringstream data;
+     std::stringstream headerlog;
+     std::stringstream datalog;
      parameters.printParams(header,data);
      PerfEvent::printCounter(header,data,"time sec",e.getDuration());
      e.printReport(header, data, scale);
-     if (printHeader)
-       std::cout << header.str() << std::endl;
+     e.logReport(headerlog,datalog,scale);
+     if (printHeader) {
+         std::cout << header.str() << std::endl;
+     }
      std::cout << data.str() << std::endl;
    }
 };
