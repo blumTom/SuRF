@@ -24,12 +24,15 @@ int main() {
     std::ofstream build_file(path + "instructions.csv", std::ofstream::trunc);
     std::ofstream lookup_file(path + "cycles.csv", std::ofstream::trunc);
     std::ofstream llcmisses_file(path + "LLC-misses.csv", std::ofstream::trunc);
-    build_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";surf_size" << ";btree_lookup_zipfian" << ";surf_lookup_zipfian" << std::endl;
-    lookup_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";surf_size" << ";btree_lookup_zipfian" << ";surf_lookup_zipfian" << std::endl;
-    llcmisses_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";surf_size" << ";btree_lookup_zipfian" << ";surf_lookup_zipfian" << std::endl;
+    std::ofstream ipc_file(path + "IPC.csv", std::ofstream::trunc);
+    build_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";btree_insert" << ";surf_insert" << ";surf_size" << std::endl;
+    lookup_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";btree_insert" << ";surf_insert" << ";surf_size" << std::endl;
+    llcmisses_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";btree_insert" << ";surf_insert" << ";surf_size" << std::endl;
+    ipc_file << "keys" << ";btree_build" << ";surf_build" << ";btree_lookup" << ";surf_lookup" << ";btree_insert" << ";surf_insert" << ";surf_size" << std::endl;
     build_file = std::ofstream(path + "instructions.csv", std::ofstream::app);
     lookup_file = std::ofstream(path + "cycles.csv", std::ofstream::app);
     llcmisses_file = std::ofstream(path + "LLC-misses.csv", std::ofstream::app);
+    ipc_file = std::ofstream(path + "IPC.csv", std::ofstream::app);
 
     //Create uniformly distributed random keys
     std::random_device rd;
@@ -62,9 +65,11 @@ int main() {
         build_file << insertedKeysCount;
         lookup_file << insertedKeysCount;
         llcmisses_file << insertedKeysCount;
+        ipc_file << insertedKeysCount;
         build_file.flush();
         lookup_file.flush();
         llcmisses_file.flush();
+        ipc_file.flush();
 
         typedef tlx::btree_multimap<uint32_t,
                 uint64_t,
@@ -187,6 +192,7 @@ int main() {
         build_file << ";" << surf->getMemoryUsage() << std::endl;
         lookup_file << ";" << surf->getMemoryUsage() << std::endl;
         llcmisses_file << ";" << surf->getMemoryUsage() << std::endl;
+        ipc_file << ";" << surf->getMemoryUsage() << std::endl;
     }
 
     build_file.flush();
@@ -195,4 +201,6 @@ int main() {
     lookup_file.close();
     llcmisses_file.flush();
     llcmisses_file.close();
+    ipc_file.flush();
+    ipc_file.close();
 }
