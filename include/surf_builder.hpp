@@ -18,7 +18,7 @@ namespace surf {
     class SuRFBuilder {
     public:
         SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone) {
-            values_ = new std::vector<std::vector<Value>>(0);
+            values_ = std::vector<std::vector<Value>>(0);
         };
 
         explicit SuRFBuilder(bool include_dense,
@@ -31,7 +31,7 @@ namespace surf {
                                                         suffix_type_(suffix_type),
                                                         hash_suffix_len_(hash_suffix_len),
                                                         real_suffix_len_(real_suffix_len) {
-            values_ = new std::vector<std::vector<Value>>(0);
+            values_ = std::vector<std::vector<Value>>(0);
         };
 
         ~SuRFBuilder() {};
@@ -124,7 +124,7 @@ namespace surf {
             return real_suffix_len_;
         }
 
-        std::vector<std::vector<Value>>* getValues() const {
+        std::vector<std::vector<Value>> getValuesPerLevel() const {
             return values_;
         }
 
@@ -187,7 +187,7 @@ namespace surf {
             insertKeyByte(key[level], level, is_start_of_node, is_term);
             level++;
             if (level > next_key.size() || !isSameKey(key, next_key, level)) {
-                (*values_)[level - 1].push_back(value);
+                values_[level - 1].push_back(value);
                 return level;
             }
 
@@ -206,7 +206,7 @@ namespace surf {
                 is_term = true;
                 insertKeyByte(kTerminator, level, is_start_of_node, is_term);
             }
-            (*values_)[level].push_back(value);
+            values_[level].push_back(value);
             level++;
 
             return level;
@@ -373,7 +373,7 @@ namespace surf {
         }
 
         void addLevel() {
-            (*values_).push_back(std::vector<uint64_t>());
+            values_.push_back(std::vector<uint64_t>());
             labels_.push_back(std::vector<label_t>());
             child_indicator_bits_.push_back(std::vector<word_t>());
             louds_bits_.push_back(std::vector<word_t>());
@@ -423,7 +423,7 @@ namespace surf {
         std::vector<position_t> node_counts_;
         std::vector<bool> is_last_item_terminator_;
 
-        std::vector<std::vector<Value>>* values_;
+        std::vector<std::vector<Value>> values_;
     };
 
 } // namespace surf

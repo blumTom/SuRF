@@ -220,9 +220,7 @@ namespace surf {
             create(keyBytes, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
         }
 
-        ~SuRF() {
-            //delete[] values_;
-        }
+        ~SuRF() {}
 
         void create(const std::vector<std::pair<std::vector<label_t>,Value>> &keys,
                     const bool include_dense,
@@ -232,7 +230,6 @@ namespace surf {
                     const level_t real_suffix_len) {
             builder_ = new SuRFBuilder<Value>(include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
             builder_->build(keys);
-            values_ = builder_->getValues();
             louds_dense_ = new LoudsDense(builder_);
             louds_sparse_ = new LoudsSparse(builder_);
             iter_ = SuRF::Iter(this);
@@ -401,9 +398,6 @@ namespace surf {
 
         uint64_t getMemoryUsage() const {
             size_t valuesCount = 0;
-            /*for (int i=0; i<values_->size(); i++) {
-                valuesCount += (*values_)[i].size();
-            }*/
             return (sizeof(SuRF) + valuesCount * sizeof(Value) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
         }
 
@@ -436,7 +430,6 @@ namespace surf {
         void destroy() {
             louds_dense_->destroy();
             louds_sparse_->destroy();
-            delete values_;
         }
 
     private:
@@ -460,8 +453,6 @@ namespace surf {
         SuRF::Iter iter_;
 
         std::function<std::vector<label_t>(const Key&)> keyDerivator_;
-
-        std::vector<std::vector<Value>>* values_;
     };
 
 } // namespace surf

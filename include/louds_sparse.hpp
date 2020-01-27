@@ -7,6 +7,7 @@
 
 #include "config.hpp"
 #include "label_vector.hpp"
+#include "value.hpp"
 #include "rank.hpp"
 #include "select.hpp"
 #include "suffix.hpp"
@@ -287,8 +288,6 @@ namespace surf {
             hash_suffix_len_ = builder->getHashSuffixLen();
             real_suffix_len_ = builder->getRealSuffixLen();
 
-            values_ = builder->getValues();
-
             height_ = builder->getLabels().size();
             start_level_ = builder->getSparseStartLevel();
 
@@ -302,6 +301,7 @@ namespace surf {
                 child_count_dense_ = node_count_dense_ + builder->getNodeCounts()[start_level_] - 1;
 
             labels_ = new LabelVector(builder->getLabels(), start_level_, height_);
+            values_ = new ValueVector(builder->getValuesPerLevel(), start_level_, height_);
 
             std::vector<position_t> num_items_per_level;
             for (level_t level = 0; level < height_; level++)
@@ -346,7 +346,7 @@ namespace surf {
                 if (!child_indicator_bits_->readBit(pos)) {
                     if (suffixes_->checkEquality(getSuffixPos(pos), key, level + 1)) {
                         position_t posInLevel = getSuffixPos(pos);
-                        return getValue(level, posInLevel);
+                        return values_->read(posInLevel);
                     } else {
                         return std::nullopt;
                     }
@@ -360,7 +360,7 @@ namespace surf {
             if ((labels_->read(pos) == kTerminator) && (!child_indicator_bits_->readBit(pos))) {
                 if (suffixes_->checkEquality(getSuffixPos(pos), key, level + 1)) {
                     position_t posInLevel = getSuffixPos(pos);
-                    return getValue(level, posInLevel);
+                    return values_->read(posInLevel);
                 } else {
                     return std::nullopt;
                 }
@@ -400,7 +400,7 @@ namespace surf {
             child_indicator_bits_->insert(pos,false);
             child_indicator_bits_->update();
             labels_->insert(pos,previousLabel);
-            insertValue(start_level_,getSuffixPos(pos),previousValue);
+            values_->insert(getSuffixPos(pos),previousValue);
             suffixes_->insertSuffix(getSuffixPos(pos),previousSuffix);
 
             return insert(key,value,in_node_num,keyDerivator);
@@ -429,7 +429,7 @@ namespace surf {
                     child_indicator_bits_->update();
                     word_t key_suffix = suffixes_->constructSuffix(suffix_type_, key, hash_suffix_len_, level + 1, real_suffix_len_);
                     suffixes_->insertSuffix(getSuffixPos(pos),key_suffix);
-                    insertValue(level,getSuffixPos(pos),value);
+                    values_->insert(getSuffixPos(pos),value);
 
                     pos = getFirstLabelPos(node_num);
                     if (!labels_->search((label_t) key[level], pos, nodeSize(pos))) return false;
@@ -439,10 +439,10 @@ namespace surf {
                 // if trie branch terminates
                 if (!child_indicator_bits_->readBit(pos)) {
                     position_t suffixPos = getSuffixPos(pos);
-                    Value compareValue = getValue(level, suffixPos);
+                    Value compareValue = values_->read(suffixPos);
                     std::vector<label_t> compareKey = keyDerivator(compareValue);
                     suffixes_->removeSuffix(suffixPos);
-                    removeValue(level,suffixPos);
+                    values_->remove(suffixPos);
 
                     child_indicator_bits_->setBit(pos);
                     child_indicator_bits_->update();
@@ -465,12 +465,12 @@ namespace surf {
                     word_t compare_key_suffix;
                     if (level < compareKey.size() - 1) {
                         labels_->insert(nextpos,compareKey[level + 1]);
-                        insertValue(level + 1,getSuffixPos(nextpos),compareValue);
+                        values_->insert(getSuffixPos(nextpos),compareValue);
                         compare_key_suffix = suffixes_->constructSuffix(suffix_type_, compareKey, hash_suffix_len_, level + 2, real_suffix_len_);
                         suffixes_->insertSuffix(getSuffixPos(nextpos),compare_key_suffix);
                     } else {
                         labels_->insert(nextpos,kTerminator);
-                        insertValue(level + 1,getSuffixPos(nextpos),compareValue);
+                        values_->insert(getSuffixPos(nextpos),compareValue);
                         compare_key_suffix = suffixes_->constructSuffix(suffix_type_, compareKey, hash_suffix_len_, level + 1, real_suffix_len_);
                         suffixes_->insertSuffix(getSuffixPos(nextpos),compare_key_suffix);
                     }
@@ -492,7 +492,7 @@ namespace surf {
                 louds_bits_->update();
                 word_t insert_suffix = suffixes_->constructSuffix(suffix_type_, key, hash_suffix_len_, level + 1, real_suffix_len_);
                 suffixes_->insertSuffix(getSuffixPos(pos),insert_suffix);
-                insertValue(level,getSuffixPos(pos),value);
+                values_->insert(getSuffixPos(pos),value);
 
                 return true;
             }
@@ -574,35 +574,7 @@ namespace surf {
         }
 
         Value getValue(level_t level, position_t pos) const {
-            assert(values_->size() > level);
-            int diff = 0;
-            for (int i=start_level_;i<level; i++) {
-                diff += (*values_)[i].size();
-            }
-            pos -= diff;
-            assert((*values_)[level].size() > pos);
-            return (*values_)[level][pos];
-        }
-
-        void insertValue(level_t level, position_t pos, const Value& value) const {
-            if (values_->size() <= level) (*values_).emplace_back(std::vector<Value>(0));
-            int diff = 0;
-            for (int i=start_level_;i<level; i++) {
-                diff += (*values_)[i].size();
-            }
-            pos -= diff;
-            assert((*values_)[level].size() > pos);
-            (*values_)[level].insert((*values_)[level].begin() + pos,value);
-        }
-
-        void removeValue(level_t level, position_t pos) const {
-            int diff = 0;
-            for (int i=start_level_;i<level; i++) {
-                diff += (*values_)[i].size();
-            }
-            pos -= diff;
-            assert((*values_)[level].size() > pos);
-            (*values_)[level].erase((*values_)[level].begin() + pos);
+            return values_->read(pos);
         }
 
         void serialize(char *&dst) const {
@@ -720,7 +692,7 @@ namespace surf {
         BitvectorSelect *louds_bits_;
         BitvectorSuffix *suffixes_;
 
-        std::vector<std::vector<Value>>* values_;
+        ValueVector<Value> *values_;
 
         SuffixType suffix_type_;
         level_t hash_suffix_len_;
